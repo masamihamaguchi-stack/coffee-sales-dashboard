@@ -1,0 +1,998 @@
+<meta charset="UTF-8">
+<title>コーヒー売上台帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --page:        #efe9dd;
+    --surface:     #faf6ee;
+    --surface-2:   #f2ece0;
+    --ink:         #2a1c10;
+    --ink-2:       #6d5b47;
+    --ink-muted:   #9c8d79;
+    --border:      rgba(42,28,16,0.12);
+    --border-2:    rgba(42,28,16,0.22);
+    --accent:      #b9762e;
+    --accent-ink:  #6e4419;
+    --accent-soft: rgba(185,118,46,0.14);
+    --good:        #0ca30c;
+    --bad:         #c23b2f;
+    --cat-1: #2a78d6; /* 食品 */
+    --cat-2: #eb6834; /* ギフト */
+    --cat-3: #1baf7a; /* 雑貨 */
+    --cat-4: #eda100; /* サブスク */
+    --cat-5: #e87ba4;
+    --cat-6: #008300;
+    --cat-7: #4a3aa7;
+    --cat-8: #e34948;
+    --shadow: 0 1px 2px rgba(42,28,16,0.06), 0 8px 24px -12px rgba(42,28,16,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --page:        #17130d;
+      --surface:     #211a11;
+      --surface-2:   #2a2115;
+      --ink:         #f6efe3;
+      --ink-2:       #cabaa4;
+      --ink-muted:   #8c7c67;
+      --border:      rgba(246,239,227,0.10);
+      --border-2:    rgba(246,239,227,0.18);
+      --accent:      #e0954a;
+      --accent-ink:  #f3c68a;
+      --accent-soft: rgba(224,149,74,0.16);
+      --good:        #3fc23f;
+      --bad:         #e5665a;
+      --cat-1: #3987e5;
+      --cat-2: #d95926;
+      --cat-3: #199e70;
+      --cat-4: #c98500;
+      --cat-5: #d55181;
+      --cat-6: #008300;
+      --cat-7: #9085e9;
+      --cat-8: #e66767;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:        #17130d;
+    --surface:     #211a11;
+    --surface-2:   #2a2115;
+    --ink:         #f6efe3;
+    --ink-2:       #cabaa4;
+    --ink-muted:   #8c7c67;
+    --border:      rgba(246,239,227,0.10);
+    --border-2:    rgba(246,239,227,0.18);
+    --accent:      #e0954a;
+    --accent-ink:  #f3c68a;
+    --accent-soft: rgba(224,149,74,0.16);
+    --good:        #3fc23f;
+    --bad:         #e5665a;
+    --cat-1: #3987e5;
+    --cat-2: #d95926;
+    --cat-3: #199e70;
+    --cat-4: #c98500;
+    --cat-5: #d55181;
+    --cat-6: #008300;
+    --cat-7: #9085e9;
+    --cat-8: #e66767;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.6);
+  }
+
+  *{ box-sizing:border-box; }
+  body{ background:var(--page); }
+  .board{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 44px 28px 72px;
+    font-family: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    display:flex; flex-direction:column; gap:22px;
+  }
+  .num{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  button, input, select{ font: inherit; }
+  :focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* header */
+  .head{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+    flex-wrap:wrap;
+    padding-bottom:20px;
+    border-bottom: 2px dashed var(--border-2);
+  }
+  .head-left .eyebrow{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
+    color: var(--accent-ink); font-weight:600; margin:0 0 8px;
+  }
+  .head-left h1{
+    font-family:"Bricolage Grotesque", sans-serif;
+    font-weight:800; font-size:clamp(28px,4vw,38px);
+    margin:0 0 6px; text-wrap:balance; letter-spacing:-0.01em;
+  }
+  .head-left p{ margin:0; color:var(--ink-2); font-size:14.5px; }
+  .head-right{
+    text-align:right; background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:14px 22px; box-shadow:var(--shadow); min-width:220px;
+  }
+  .head-right .lbl{ font-size:12px; color:var(--ink-muted); font-weight:600; letter-spacing:0.04em; }
+  .head-right .val{ font-size:30px; font-weight:700; color:var(--accent-ink); line-height:1.2; }
+
+  /* filter bar */
+  .filter-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:16px 22px; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:13px;
+  }
+  .filter-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .filter-label{ font-size:12px; font-weight:700; color:var(--ink-2); letter-spacing:.04em; min-width:40px; }
+  .preset-group{ display:flex; gap:6px; flex-wrap:wrap; }
+  .preset-btn{
+    font-size:13px; font-weight:600; padding:7px 15px; border-radius:999px;
+    border:1px solid var(--border-2); background:var(--surface-2); color:var(--ink-2);
+    cursor:pointer; transition:background .15s,color .15s,border-color .15s;
+  }
+  .preset-btn:hover{ border-color:var(--accent); }
+  .preset-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .date-range{ display:flex; align-items:center; gap:8px; color:var(--ink-2); font-size:13px; }
+  .date-range input[type=date]{
+    font-family:"IBM Plex Mono",monospace; font-size:12.5px; padding:6px 9px; border-radius:8px;
+    border:1px solid var(--border-2); background:var(--surface-2); color:var(--ink);
+  }
+  .date-range span{ color:var(--ink-muted); }
+  .cat-chip-group{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cat-chip{
+    --chip-color: var(--ink-muted);
+    display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600;
+    padding:7px 14px 7px 11px; border-radius:999px; border:1.5px solid var(--border-2);
+    background:var(--surface-2); color:var(--ink-muted); cursor:pointer; transition:all .15s;
+  }
+  .cat-chip .dot{ width:9px; height:9px; border-radius:3px; background:var(--chip-color); flex:none; }
+  .cat-chip.active{ color:var(--ink); border-color:var(--chip-color); background:var(--surface); }
+  .reset-btn{
+    margin-left:auto; font-size:12.5px; font-weight:600; color:var(--ink-muted);
+    background:none; border:1px solid var(--border-2); border-radius:8px; padding:7px 13px; cursor:pointer;
+  }
+  .reset-btn:hover{ color:var(--ink); border-color:var(--accent); }
+  .source-select{
+    font-family:"IBM Plex Mono",monospace; font-size:12.5px; padding:7px 10px; border-radius:8px;
+    border:1px solid var(--border-2); background:var(--surface-2); color:var(--ink); max-width:280px;
+  }
+  .source-status{ font-size:12px; color:var(--ink-muted); }
+  .source-status.err{ color:var(--bad); font-weight:600; }
+
+  /* kpi strip */
+  .kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .kpi{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:18px 20px; box-shadow:var(--shadow);
+  }
+  .kpi .lbl{ font-size:13px; color:var(--ink-2); font-weight:600; margin-bottom:8px; }
+  .kpi .val{ font-size:24px; font-weight:700; color:var(--ink); }
+  .kpi .sub{ font-size:12px; color:var(--ink-muted); margin-top:4px; }
+
+  /* cards */
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:24px 26px; box-shadow:var(--shadow);
+  }
+  .card h2{
+    font-family:"Bricolage Grotesque", sans-serif; font-size:18px; font-weight:700;
+    margin:0 0 2px;
+  }
+  .card .card-sub{ font-size:12.5px; color:var(--ink-muted); margin:0 0 18px; }
+
+  /* monthly chart */
+  .month-chart{ display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; }
+  .month-chart svg{ flex:1 1 460px; min-width:280px; overflow:visible; }
+  .month-chart .bar{ fill:var(--accent); }
+  .month-chart .bar.peak{ fill:var(--accent-ink); }
+  .month-chart .axis{ stroke:var(--border-2); stroke-width:1; }
+  .month-chart .vlabel{ font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; fill:var(--ink); font-variant-numeric:tabular-nums; }
+  .month-chart .mlabel{ font-family:"Figtree",sans-serif; font-size:13px; fill:var(--ink-2); }
+  .month-chart .delta{ font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; }
+  .month-side{ flex:0 0 190px; display:flex; flex-direction:column; gap:12px; }
+  .month-stat{ border-left:3px solid var(--border-2); padding-left:12px; }
+  .month-stat .k{ font-size:12px; color:var(--ink-muted); }
+  .month-stat .v{ font-size:16px; font-weight:700; }
+  .month-stat .v.up{ color:var(--good); }
+  .month-stat .v.down{ color:var(--bad); }
+
+  /* two column row */
+  .row2{ display:grid; grid-template-columns: 1.55fr 1fr; gap:22px; align-items:start; }
+  .stack{ display:flex; flex-direction:column; gap:22px; }
+
+  /* ranking bars */
+  .rank{ display:flex; flex-direction:column; gap:11px; min-height:20px; }
+  .rank-row{ display:grid; grid-template-columns: 26px 108px 1fr auto; align-items:center; gap:10px; }
+  .rank-no{ font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:700; color:var(--ink-muted); }
+  .rank-row.top .rank-no{ color:var(--accent-ink); }
+  .rank-name{ font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rank-track{ background:var(--surface-2); border-radius:6px; height:16px; position:relative; overflow:hidden; }
+  .rank-fill{ background:var(--accent); height:100%; border-radius:6px; transition:width .2s ease; }
+  .rank-row.top .rank-fill{ background:var(--accent-ink); }
+  .rank-value{ text-align:right; font-size:13px; white-space:nowrap; }
+  .rank-value .y{ font-weight:700; }
+  .rank-value .m{ color:var(--ink-muted); font-size:11px; margin-left:5px; }
+  .empty-msg{ font-size:13.5px; color:var(--ink-muted); padding:18px 4px; text-align:center; }
+
+  /* donut */
+  .donut-wrap{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+  .donut-wrap svg{ flex:0 0 168px; }
+  .legend{ flex:1 1 160px; display:flex; flex-direction:column; gap:9px; min-height:20px; }
+  .legend-row{ display:flex; align-items:center; gap:9px; font-size:13px; }
+  .legend-dot{ width:10px; height:10px; border-radius:3px; flex:none; }
+  .legend-row .name{ flex:1; color:var(--ink); font-weight:600; }
+  .legend-row .pct{ font-size:12.5px; }
+  .legend-row .amt{ font-size:11.5px; color:var(--ink-muted); min-width:78px; text-align:right; }
+
+  /* inventory */
+  .inv-list{ display:flex; flex-direction:column; gap:12px; }
+  .inv-row{ display:grid; grid-template-columns: 150px 1fr 150px 78px; align-items:center; gap:14px; }
+  .inv-name{ font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .inv-track{ position:relative; background:var(--surface-2); border-radius:6px; height:16px; overflow:visible; }
+  .inv-fill{ position:absolute; inset:0; width:0; border-radius:6px; background:var(--accent); transition:width .2s ease; }
+  .inv-fill.good{ background:var(--good); }
+  .inv-fill.warn{ background:#e0a020; }
+  .inv-fill.crit{ background:var(--bad); }
+  .inv-marker{ position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink); opacity:.55; }
+  .inv-nums{ display:flex; flex-direction:column; gap:2px; text-align:right; font-size:12.5px; }
+  .inv-nums .cur{ font-weight:700; font-size:13.5px; }
+  .inv-nums .delta{ color:var(--ink-muted); font-size:11px; }
+  .status-pill{
+    justify-self:end; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px;
+    text-align:center; white-space:nowrap;
+  }
+  .status-pill.good{ background:rgba(12,163,12,0.14); color:var(--good); }
+  .status-pill.warn{ background:rgba(224,160,32,0.16); color:#a5730f; }
+  .status-pill.crit{ background:rgba(194,59,47,0.14); color:var(--bad); }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .status-pill.warn{ color:#e0a020; }
+  }
+  :root[data-theme="dark"] .status-pill.warn{ color:#e0a020; }
+
+  .foot-note{ font-size:12px; color:var(--ink-muted); text-align:center; padding-top:6px; }
+
+  .source-hint{ font-size:12px; color:var(--ink-muted); }
+
+  .drop-overlay{
+    position:fixed; inset:0; z-index:999;
+    background:rgba(0,0,0,0.55);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .15s ease;
+  }
+  .drop-overlay.show{ opacity:1; pointer-events:auto; }
+  .drop-overlay .box{
+    background:var(--surface); border:3px dashed var(--accent); border-radius:20px;
+    padding:48px 64px; text-align:center; box-shadow:var(--shadow); max-width:80vw;
+  }
+  .drop-overlay .box .big{ font-family:"Bricolage Grotesque",sans-serif; font-size:22px; font-weight:800; color:var(--ink); margin-bottom:8px; }
+  .drop-overlay .box .small{ font-size:13px; color:var(--ink-2); }
+  .drop-overlay .box .small.warn{ color:var(--bad); font-weight:600; }
+
+  @media (max-width:860px){
+    .kpi-row{ grid-template-columns:repeat(2,1fr); }
+    .row2{ grid-template-columns:1fr; }
+    .month-chart{ flex-direction:column; }
+    .reset-btn{ margin-left:0; }
+    .inv-row{ grid-template-columns: 1fr; gap:6px; }
+    .status-pill{ justify-self:start; }
+  }
+</style>
+
+<div class="drop-overlay" id="dropOverlay">
+  <div class="box">
+    <div class="big" id="dropOverlayText">ここにCSVファイルをドロップ</div>
+    <div class="small">売上CSV・「在庫データ.csv」・「入庫データ.csv」を自動で判別して読み込みます</div>
+  </div>
+</div>
+
+<div class="board">
+
+  <div class="head">
+    <div class="head-left">
+      <p class="eyebrow">Sales Ledger</p>
+      <h1>コーヒー売上台帳</h1>
+      <p id="headSubtitle">読み込み中…</p>
+    </div>
+    <div class="head-right">
+      <div class="lbl">合計売上(絞り込み中)</div>
+      <div class="val num" id="headTotal">¥0</div>
+    </div>
+  </div>
+
+  <div class="filter-card">
+    <div class="filter-row">
+      <span class="filter-label">データ</span>
+      <select class="source-select" id="datasetSelect"><option value="embedded">内蔵データ(2026年1〜3月・オフライン)</option></select>
+      <span class="source-status" id="sourceStatus"></span>
+      <span class="source-hint">またはCSVファイルをこの画面にドラッグ&amp;ドロップ</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">期間</span>
+      <div class="preset-group" id="presetGroup"></div>
+      <div class="date-range">
+        <input type="date" id="fromDate">
+        <span>〜</span>
+        <input type="date" id="toDate">
+      </div>
+      <button class="reset-btn" id="resetBtn">リセット</button>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">カテゴリ</span>
+      <div class="cat-chip-group" id="catChipGroup"></div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="lbl">総販売数</div>
+      <div class="val" id="kpiQty">0<span style="font-size:14px;font-weight:600;"> 点</span></div>
+      <div class="sub" id="kpiQtySub">-</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">平均客単価</div>
+      <div class="val num" id="kpiAvgOrder">¥0</div>
+      <div class="sub">1件あたり平均</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">1日あたり平均売上</div>
+      <div class="val num" id="kpiAvgDaily">¥0</div>
+      <div class="sub" id="kpiAvgDailySub">-</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">最多売上カテゴリ</div>
+      <div class="val" id="kpiTopCat">-</div>
+      <div class="sub num" id="kpiTopCatSub">-</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>月別売上推移</h2>
+    <p class="card-sub">月次の売上合計と前月比の増減(選択した期間・カテゴリで再集計)</p>
+    <div class="month-chart">
+      <svg id="monthlySvg" viewBox="0 0 640 280" role="img" aria-label="月別売上推移の棒グラフ"></svg>
+      <div class="month-side" id="monthlySide"></div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="card">
+      <h2>商品別売上ランキング</h2>
+      <p class="card-sub">売上金額順(選択した期間・カテゴリで再集計)</p>
+      <div class="rank" id="productRank"></div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <h2>カテゴリ別売上構成</h2>
+        <p class="card-sub">売上金額の構成比</p>
+        <div class="donut-wrap">
+          <svg id="donutSvg" viewBox="0 0 180 180" role="img" aria-label="カテゴリ別売上構成の円グラフ"></svg>
+          <div class="legend" id="donutLegend"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>地域別売上</h2>
+        <p class="card-sub">売上金額順(選択した期間・カテゴリで再集計)</p>
+        <div class="rank" id="regionRank"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>在庫状況</h2>
+    <p class="card-sub">選択した期間の入庫・出庫(売上)から算出した現在庫。「在庫データ.csv」「入庫データ.csv」を追加でドラッグ&ドロップすると更新できます。</p>
+    <div class="kpi-row" id="inventoryKpis" style="margin-bottom:18px;"></div>
+    <div class="inv-list" id="inventoryBody"></div>
+  </div>
+
+  <p class="foot-note" id="footNote"></p>
+</div>
+
+<script>
+  /* ---- fallback dataset: 2026年1〜3月(オフラインで file:// から開いた場合でも動作) ---- */
+  const EMBEDDED_DATA = [{"d":"2026-01-01","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":1,"u":1200,"s":1200},{"d":"2026-01-01","p":"ギフトセット","c":"ギフト","r":"福岡","q":4,"u":4500,"s":18000},{"d":"2026-01-02","p":"マグカップ","c":"雑貨","r":"東京","q":1,"u":1800,"s":1800},{"d":"2026-01-02","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":2,"u":1500,"s":3000},{"d":"2026-01-03","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":3,"u":1500,"s":4500},{"d":"2026-01-03","p":"ドリップコーヒー12杯","c":"食品","r":"札幌","q":2,"u":1200,"s":2400},{"d":"2026-01-03","p":"コーヒー豆200g","c":"食品","r":"東京","q":4,"u":1500,"s":6000},{"d":"2026-01-03","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-01-03","p":"ドリップパックギフト","c":"ギフト","r":"名古屋","q":3,"u":3200,"s":9600},{"d":"2026-01-03","p":"ギフトセット","c":"ギフト","r":"名古屋","q":5,"u":4500,"s":22500},{"d":"2026-01-03","p":"カフェオレベース","c":"食品","r":"名古屋","q":3,"u":980,"s":2940},{"d":"2026-01-04","p":"タンブラー","c":"雑貨","r":"福岡","q":1,"u":2800,"s":2800},{"d":"2026-01-04","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-01-04","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-01-04","p":"マグカップ","c":"雑貨","r":"大阪","q":1,"u":1800,"s":1800},{"d":"2026-01-04","p":"コーヒー豆200g","c":"食品","r":"東京","q":4,"u":1500,"s":6000},{"d":"2026-01-04","p":"マグカップ","c":"雑貨","r":"名古屋","q":1,"u":1800,"s":1800},{"d":"2026-01-05","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":5,"u":1200,"s":6000},{"d":"2026-01-05","p":"マグカップ","c":"雑貨","r":"名古屋","q":2,"u":1800,"s":3600},{"d":"2026-01-05","p":"ドリップパックギフト","c":"ギフト","r":"福岡","q":1,"u":3200,"s":3200},{"d":"2026-01-06","p":"ドリップパックギフト","c":"ギフト","r":"大阪","q":1,"u":3200,"s":3200},{"d":"2026-01-06","p":"定期便（月1）","c":"サブスク","r":"名古屋","q":2,"u":3600,"s":7200},{"d":"2026-01-07","p":"マグカップ","c":"雑貨","r":"大阪","q":4,"u":1800,"s":7200},{"d":"2026-01-07","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-01-07","p":"タンブラー","c":"雑貨","r":"東京","q":2,"u":2800,"s":5600},{"d":"2026-01-08","p":"カフェオレベース","c":"食品","r":"その他","q":1,"u":980,"s":980},{"d":"2026-01-08","p":"タンブラー","c":"雑貨","r":"福岡","q":3,"u":2800,"s":8400},{"d":"2026-01-08","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":2,"u":1200,"s":2400},{"d":"2026-01-08","p":"マグカップ","c":"雑貨","r":"大阪","q":2,"u":1800,"s":3600},{"d":"2026-01-08","p":"カフェオレベース","c":"食品","r":"東京","q":2,"u":980,"s":1960},{"d":"2026-01-09","p":"マグカップ","c":"雑貨","r":"東京","q":4,"u":1800,"s":7200},{"d":"2026-01-09","p":"ギフトセット","c":"ギフト","r":"福岡","q":1,"u":4500,"s":4500},{"d":"2026-01-10","p":"カフェオレベース","c":"食品","r":"大阪","q":4,"u":980,"s":3920},{"d":"2026-01-10","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":2,"u":3200,"s":6400},{"d":"2026-01-10","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":3,"u":1200,"s":3600},{"d":"2026-01-10","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":2,"u":1500,"s":3000},{"d":"2026-01-10","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":2,"u":1200,"s":2400},{"d":"2026-01-10","p":"ギフトセット","c":"ギフト","r":"名古屋","q":1,"u":4500,"s":4500},{"d":"2026-01-11","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-01-11","p":"定期便（月1）","c":"サブスク","r":"札幌","q":1,"u":3600,"s":3600},{"d":"2026-01-11","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":1,"u":1500,"s":1500},{"d":"2026-01-11","p":"ギフトセット","c":"ギフト","r":"札幌","q":5,"u":4500,"s":22500},{"d":"2026-01-11","p":"タンブラー","c":"雑貨","r":"東京","q":2,"u":2800,"s":5600},{"d":"2026-01-11","p":"定期便（月1）","c":"サブスク","r":"東京","q":2,"u":3600,"s":7200},{"d":"2026-01-12","p":"定期便（月1）","c":"サブスク","r":"その他","q":3,"u":3600,"s":10800},{"d":"2026-01-12","p":"マグカップ","c":"雑貨","r":"福岡","q":1,"u":1800,"s":1800},{"d":"2026-01-12","p":"マグカップ","c":"雑貨","r":"大阪","q":4,"u":1800,"s":7200},{"d":"2026-01-12","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-01-12","p":"ドリップコーヒー12杯","c":"食品","r":"名古屋","q":2,"u":1200,"s":2400},{"d":"2026-01-13","p":"ドリップコーヒー12杯","c":"食品","r":"名古屋","q":1,"u":1200,"s":1200},{"d":"2026-01-13","p":"定期便（月1）","c":"サブスク","r":"札幌","q":1,"u":3600,"s":3600},{"d":"2026-01-14","p":"コーヒー豆200g","c":"食品","r":"大阪","q":2,"u":1500,"s":3000},{"d":"2026-01-14","p":"ギフトセット","c":"ギフト","r":"札幌","q":2,"u":4500,"s":9000},{"d":"2026-01-14","p":"コーヒー豆200g","c":"食品","r":"大阪","q":1,"u":1500,"s":1500},{"d":"2026-01-15","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-01-15","p":"カフェオレベース","c":"食品","r":"福岡","q":2,"u":980,"s":1960},{"d":"2026-01-16","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":3,"u":1200,"s":3600},{"d":"2026-01-16","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":2,"u":1200,"s":2400},{"d":"2026-01-17","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-01-17","p":"定期便（月1）","c":"サブスク","r":"大阪","q":3,"u":3600,"s":10800},{"d":"2026-01-17","p":"タンブラー","c":"雑貨","r":"東京","q":5,"u":2800,"s":14000},{"d":"2026-01-17","p":"ドリップパックギフト","c":"ギフト","r":"その他","q":4,"u":3200,"s":12800},{"d":"2026-01-18","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-01-18","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-01-18","p":"定期便（月1）","c":"サブスク","r":"東京","q":3,"u":3600,"s":10800},{"d":"2026-01-18","p":"カフェオレベース","c":"食品","r":"大阪","q":4,"u":980,"s":3920},{"d":"2026-01-19","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":5,"u":1200,"s":6000},{"d":"2026-01-19","p":"タンブラー","c":"雑貨","r":"名古屋","q":2,"u":2800,"s":5600},{"d":"2026-01-19","p":"ドリップコーヒー12杯","c":"食品","r":"名古屋","q":2,"u":1200,"s":2400},{"d":"2026-01-19","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":5,"u":3200,"s":16000},{"d":"2026-01-19","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":2,"u":1200,"s":2400},{"d":"2026-01-20","p":"カフェオレベース","c":"食品","r":"その他","q":2,"u":980,"s":1960},{"d":"2026-01-20","p":"タンブラー","c":"雑貨","r":"東京","q":1,"u":2800,"s":2800},{"d":"2026-01-20","p":"マグカップ","c":"雑貨","r":"名古屋","q":1,"u":1800,"s":1800},{"d":"2026-01-21","p":"コーヒー豆200g","c":"食品","r":"福岡","q":1,"u":1500,"s":1500},{"d":"2026-01-21","p":"カフェオレベース","c":"食品","r":"福岡","q":1,"u":980,"s":980},{"d":"2026-01-21","p":"コーヒー豆200g","c":"食品","r":"福岡","q":1,"u":1500,"s":1500},{"d":"2026-01-21","p":"カフェオレベース","c":"食品","r":"その他","q":5,"u":980,"s":4900},{"d":"2026-01-22","p":"タンブラー","c":"雑貨","r":"名古屋","q":1,"u":2800,"s":2800},{"d":"2026-01-22","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-01-23","p":"ドリップコーヒー12杯","c":"食品","r":"札幌","q":2,"u":1200,"s":2400},{"d":"2026-01-23","p":"マグカップ","c":"雑貨","r":"その他","q":2,"u":1800,"s":3600},{"d":"2026-01-23","p":"ドリップコーヒー12杯","c":"食品","r":"札幌","q":1,"u":1200,"s":1200},{"d":"2026-01-23","p":"マグカップ","c":"雑貨","r":"その他","q":1,"u":1800,"s":1800},{"d":"2026-01-24","p":"定期便（月1）","c":"サブスク","r":"福岡","q":1,"u":3600,"s":3600},{"d":"2026-01-24","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-01-24","p":"マグカップ","c":"雑貨","r":"札幌","q":2,"u":1800,"s":3600},{"d":"2026-01-25","p":"定期便（月1）","c":"サブスク","r":"札幌","q":1,"u":3600,"s":3600},{"d":"2026-01-25","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-01-25","p":"ギフトセット","c":"ギフト","r":"名古屋","q":1,"u":4500,"s":4500},{"d":"2026-01-25","p":"ギフトセット","c":"ギフト","r":"名古屋","q":1,"u":4500,"s":4500},{"d":"2026-01-25","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":4,"u":1200,"s":4800},{"d":"2026-01-25","p":"定期便（月1）","c":"サブスク","r":"名古屋","q":3,"u":3600,"s":10800},{"d":"2026-01-26","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-01-26","p":"定期便（月1）","c":"サブスク","r":"その他","q":1,"u":3600,"s":3600},{"d":"2026-01-26","p":"カフェオレベース","c":"食品","r":"福岡","q":2,"u":980,"s":1960},{"d":"2026-01-27","p":"ギフトセット","c":"ギフト","r":"札幌","q":1,"u":4500,"s":4500},{"d":"2026-01-27","p":"マグカップ","c":"雑貨","r":"東京","q":4,"u":1800,"s":7200},{"d":"2026-01-27","p":"ドリップパックギフト","c":"ギフト","r":"その他","q":3,"u":3200,"s":9600},{"d":"2026-01-27","p":"定期便（月1）","c":"サブスク","r":"東京","q":2,"u":3600,"s":7200},{"d":"2026-01-28","p":"ドリップパックギフト","c":"ギフト","r":"大阪","q":2,"u":3200,"s":6400},{"d":"2026-01-28","p":"ギフトセット","c":"ギフト","r":"東京","q":1,"u":4500,"s":4500},{"d":"2026-01-28","p":"ギフトセット","c":"ギフト","r":"大阪","q":1,"u":4500,"s":4500},{"d":"2026-01-28","p":"カフェオレベース","c":"食品","r":"東京","q":4,"u":980,"s":3920},{"d":"2026-01-29","p":"コーヒー豆200g","c":"食品","r":"福岡","q":1,"u":1500,"s":1500},{"d":"2026-01-29","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":1,"u":1200,"s":1200},{"d":"2026-01-29","p":"ドリップパックギフト","c":"ギフト","r":"その他","q":1,"u":3200,"s":3200},{"d":"2026-01-29","p":"マグカップ","c":"雑貨","r":"大阪","q":5,"u":1800,"s":9000},{"d":"2026-01-30","p":"定期便（月1）","c":"サブスク","r":"東京","q":5,"u":3600,"s":18000},{"d":"2026-01-30","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":1,"u":1200,"s":1200},{"d":"2026-01-30","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":2,"u":1200,"s":2400},{"d":"2026-01-30","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":2,"u":1500,"s":3000},{"d":"2026-01-31","p":"定期便（月1）","c":"サブスク","r":"東京","q":1,"u":3600,"s":3600},{"d":"2026-01-31","p":"カフェオレベース","c":"食品","r":"名古屋","q":3,"u":980,"s":2940},{"d":"2026-01-31","p":"マグカップ","c":"雑貨","r":"その他","q":2,"u":1800,"s":3600},{"d":"2026-01-31","p":"コーヒー豆200g","c":"食品","r":"大阪","q":4,"u":1500,"s":6000},{"d":"2026-01-31","p":"定期便（月1）","c":"サブスク","r":"名古屋","q":2,"u":3600,"s":7200},{"d":"2026-01-31","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":2,"u":1200,"s":2400},{"d":"2026-01-31","p":"マグカップ","c":"雑貨","r":"大阪","q":2,"u":1800,"s":3600},{"d":"2026-01-31","p":"タンブラー","c":"雑貨","r":"東京","q":2,"u":2800,"s":5600},{"d":"2026-02-01","p":"マグカップ","c":"雑貨","r":"その他","q":2,"u":1800,"s":3600},{"d":"2026-02-01","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":1,"u":1500,"s":1500},{"d":"2026-02-01","p":"コーヒー豆200g","c":"食品","r":"大阪","q":2,"u":1500,"s":3000},{"d":"2026-02-01","p":"マグカップ","c":"雑貨","r":"大阪","q":1,"u":1800,"s":1800},{"d":"2026-02-01","p":"コーヒー豆200g","c":"食品","r":"大阪","q":4,"u":1500,"s":6000},{"d":"2026-02-01","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-02-01","p":"タンブラー","c":"雑貨","r":"名古屋","q":1,"u":2800,"s":2800},{"d":"2026-02-01","p":"ドリップパックギフト","c":"ギフト","r":"福岡","q":2,"u":3200,"s":6400},{"d":"2026-02-02","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-02-02","p":"定期便（月1）","c":"サブスク","r":"名古屋","q":3,"u":3600,"s":10800},{"d":"2026-02-02","p":"カフェオレベース","c":"食品","r":"札幌","q":2,"u":980,"s":1960},{"d":"2026-02-03","p":"タンブラー","c":"雑貨","r":"東京","q":2,"u":2800,"s":5600},{"d":"2026-02-03","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":3,"u":1200,"s":3600},{"d":"2026-02-03","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-02-03","p":"定期便（月1）","c":"サブスク","r":"名古屋","q":1,"u":3600,"s":3600},{"d":"2026-02-03","p":"コーヒー豆200g","c":"食品","r":"札幌","q":1,"u":1500,"s":1500},{"d":"2026-02-04","p":"マグカップ","c":"雑貨","r":"その他","q":2,"u":1800,"s":3600},{"d":"2026-02-04","p":"定期便（月1）","c":"サブスク","r":"札幌","q":2,"u":3600,"s":7200},{"d":"2026-02-04","p":"ギフトセット","c":"ギフト","r":"名古屋","q":3,"u":4500,"s":13500},{"d":"2026-02-04","p":"タンブラー","c":"雑貨","r":"札幌","q":2,"u":2800,"s":5600},{"d":"2026-02-04","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-02-05","p":"ギフトセット","c":"ギフト","r":"名古屋","q":2,"u":4500,"s":9000},{"d":"2026-02-05","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-02-05","p":"コーヒー豆200g","c":"食品","r":"大阪","q":2,"u":1500,"s":3000},{"d":"2026-02-05","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":2,"u":1200,"s":2400},{"d":"2026-02-06","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":2,"u":1200,"s":2400},{"d":"2026-02-06","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-02-06","p":"定期便（月1）","c":"サブスク","r":"名古屋","q":2,"u":3600,"s":7200},{"d":"2026-02-07","p":"カフェオレベース","c":"食品","r":"その他","q":1,"u":980,"s":980},{"d":"2026-02-07","p":"カフェオレベース","c":"食品","r":"札幌","q":3,"u":980,"s":2940},{"d":"2026-02-07","p":"タンブラー","c":"雑貨","r":"福岡","q":3,"u":2800,"s":8400},{"d":"2026-02-07","p":"定期便（月1）","c":"サブスク","r":"大阪","q":1,"u":3600,"s":3600},{"d":"2026-02-07","p":"カフェオレベース","c":"食品","r":"大阪","q":2,"u":980,"s":1960},{"d":"2026-02-07","p":"ドリップパックギフト","c":"ギフト","r":"福岡","q":3,"u":3200,"s":9600},{"d":"2026-02-07","p":"定期便（月1）","c":"サブスク","r":"その他","q":2,"u":3600,"s":7200},{"d":"2026-02-07","p":"定期便（月1）","c":"サブスク","r":"名古屋","q":2,"u":3600,"s":7200},{"d":"2026-02-08","p":"マグカップ","c":"雑貨","r":"東京","q":1,"u":1800,"s":1800},{"d":"2026-02-08","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-02-08","p":"コーヒー豆200g","c":"食品","r":"福岡","q":1,"u":1500,"s":1500},{"d":"2026-02-09","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-02-09","p":"タンブラー","c":"雑貨","r":"その他","q":1,"u":2800,"s":2800},{"d":"2026-02-09","p":"マグカップ","c":"雑貨","r":"福岡","q":2,"u":1800,"s":3600},{"d":"2026-02-09","p":"ギフトセット","c":"ギフト","r":"その他","q":1,"u":4500,"s":4500},{"d":"2026-02-09","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":1,"u":1200,"s":1200},{"d":"2026-02-09","p":"マグカップ","c":"雑貨","r":"名古屋","q":1,"u":1800,"s":1800},{"d":"2026-02-10","p":"ギフトセット","c":"ギフト","r":"東京","q":2,"u":4500,"s":9000},{"d":"2026-02-10","p":"ギフトセット","c":"ギフト","r":"東京","q":3,"u":4500,"s":13500},{"d":"2026-02-10","p":"定期便（月1）","c":"サブスク","r":"東京","q":1,"u":3600,"s":3600},{"d":"2026-02-10","p":"コーヒー豆200g","c":"食品","r":"福岡","q":4,"u":1500,"s":6000},{"d":"2026-02-11","p":"定期便（月1）","c":"サブスク","r":"東京","q":2,"u":3600,"s":7200},{"d":"2026-02-11","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":2,"u":3200,"s":6400},{"d":"2026-02-11","p":"コーヒー豆200g","c":"食品","r":"福岡","q":3,"u":1500,"s":4500},{"d":"2026-02-11","p":"ドリップパックギフト","c":"ギフト","r":"名古屋","q":1,"u":3200,"s":3200},{"d":"2026-02-11","p":"タンブラー","c":"雑貨","r":"福岡","q":1,"u":2800,"s":2800},{"d":"2026-02-11","p":"マグカップ","c":"雑貨","r":"東京","q":1,"u":1800,"s":1800},{"d":"2026-02-12","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":2,"u":1200,"s":2400},{"d":"2026-02-12","p":"ドリップパックギフト","c":"ギフト","r":"福岡","q":1,"u":3200,"s":3200},{"d":"2026-02-12","p":"ギフトセット","c":"ギフト","r":"その他","q":1,"u":4500,"s":4500},{"d":"2026-02-12","p":"ドリップパックギフト","c":"ギフト","r":"名古屋","q":1,"u":3200,"s":3200},{"d":"2026-02-12","p":"カフェオレベース","c":"食品","r":"福岡","q":1,"u":980,"s":980},{"d":"2026-02-12","p":"ドリップパックギフト","c":"ギフト","r":"札幌","q":1,"u":3200,"s":3200},{"d":"2026-02-13","p":"コーヒー豆200g","c":"食品","r":"大阪","q":2,"u":1500,"s":3000},{"d":"2026-02-13","p":"カフェオレベース","c":"食品","r":"東京","q":3,"u":980,"s":2940},{"d":"2026-02-13","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":3,"u":1200,"s":3600},{"d":"2026-02-13","p":"コーヒー豆200g","c":"食品","r":"札幌","q":2,"u":1500,"s":3000},{"d":"2026-02-13","p":"コーヒー豆200g","c":"食品","r":"東京","q":4,"u":1500,"s":6000},{"d":"2026-02-13","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":1,"u":1200,"s":1200},{"d":"2026-02-14","p":"マグカップ","c":"雑貨","r":"名古屋","q":1,"u":1800,"s":1800},{"d":"2026-02-14","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-02-14","p":"マグカップ","c":"雑貨","r":"大阪","q":2,"u":1800,"s":3600},{"d":"2026-02-14","p":"カフェオレベース","c":"食品","r":"名古屋","q":1,"u":980,"s":980},{"d":"2026-02-14","p":"ギフトセット","c":"ギフト","r":"大阪","q":2,"u":4500,"s":9000},{"d":"2026-02-15","p":"コーヒー豆200g","c":"食品","r":"東京","q":2,"u":1500,"s":3000},{"d":"2026-02-15","p":"コーヒー豆200g","c":"食品","r":"福岡","q":4,"u":1500,"s":6000},{"d":"2026-02-15","p":"マグカップ","c":"雑貨","r":"東京","q":2,"u":1800,"s":3600},{"d":"2026-02-15","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":3,"u":1500,"s":4500},{"d":"2026-02-15","p":"マグカップ","c":"雑貨","r":"その他","q":3,"u":1800,"s":5400},{"d":"2026-02-15","p":"コーヒー豆200g","c":"食品","r":"大阪","q":1,"u":1500,"s":1500},{"d":"2026-02-16","p":"コーヒー豆200g","c":"食品","r":"その他","q":2,"u":1500,"s":3000},{"d":"2026-02-16","p":"マグカップ","c":"雑貨","r":"東京","q":3,"u":1800,"s":5400},{"d":"2026-02-16","p":"カフェオレベース","c":"食品","r":"札幌","q":2,"u":980,"s":1960},{"d":"2026-02-17","p":"カフェオレベース","c":"食品","r":"大阪","q":5,"u":980,"s":4900},{"d":"2026-02-17","p":"コーヒー豆200g","c":"食品","r":"札幌","q":1,"u":1500,"s":1500},{"d":"2026-02-17","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":2,"u":1200,"s":2400},{"d":"2026-02-17","p":"マグカップ","c":"雑貨","r":"東京","q":3,"u":1800,"s":5400},{"d":"2026-02-17","p":"定期便（月1）","c":"サブスク","r":"東京","q":1,"u":3600,"s":3600},{"d":"2026-02-17","p":"タンブラー","c":"雑貨","r":"大阪","q":2,"u":2800,"s":5600},{"d":"2026-02-18","p":"ギフトセット","c":"ギフト","r":"大阪","q":4,"u":4500,"s":18000},{"d":"2026-02-18","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":1,"u":1500,"s":1500},{"d":"2026-02-18","p":"タンブラー","c":"雑貨","r":"東京","q":5,"u":2800,"s":14000},{"d":"2026-02-19","p":"定期便（月1）","c":"サブスク","r":"東京","q":1,"u":3600,"s":3600},{"d":"2026-02-19","p":"マグカップ","c":"雑貨","r":"東京","q":1,"u":1800,"s":1800},{"d":"2026-02-20","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":2,"u":1200,"s":2400},{"d":"2026-02-20","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-02-21","p":"ギフトセット","c":"ギフト","r":"大阪","q":2,"u":4500,"s":9000},{"d":"2026-02-21","p":"定期便（月1）","c":"サブスク","r":"福岡","q":2,"u":3600,"s":7200},{"d":"2026-02-21","p":"マグカップ","c":"雑貨","r":"その他","q":1,"u":1800,"s":1800},{"d":"2026-02-21","p":"タンブラー","c":"雑貨","r":"名古屋","q":4,"u":2800,"s":11200},{"d":"2026-02-21","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-02-21","p":"コーヒー豆200g","c":"食品","r":"福岡","q":2,"u":1500,"s":3000},{"d":"2026-02-22","p":"カフェオレベース","c":"食品","r":"大阪","q":1,"u":980,"s":980},{"d":"2026-02-22","p":"カフェオレベース","c":"食品","r":"東京","q":2,"u":980,"s":1960},{"d":"2026-02-22","p":"カフェオレベース","c":"食品","r":"名古屋","q":4,"u":980,"s":3920},{"d":"2026-02-22","p":"ギフトセット","c":"ギフト","r":"名古屋","q":1,"u":4500,"s":4500},{"d":"2026-02-22","p":"コーヒー豆200g","c":"食品","r":"福岡","q":3,"u":1500,"s":4500},{"d":"2026-02-22","p":"タンブラー","c":"雑貨","r":"東京","q":3,"u":2800,"s":8400},{"d":"2026-02-23","p":"タンブラー","c":"雑貨","r":"福岡","q":1,"u":2800,"s":2800},{"d":"2026-02-23","p":"タンブラー","c":"雑貨","r":"大阪","q":1,"u":2800,"s":2800},{"d":"2026-02-23","p":"定期便（月1）","c":"サブスク","r":"大阪","q":3,"u":3600,"s":10800},{"d":"2026-02-23","p":"定期便（月1）","c":"サブスク","r":"大阪","q":1,"u":3600,"s":3600},{"d":"2026-02-23","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-02-24","p":"マグカップ","c":"雑貨","r":"東京","q":4,"u":1800,"s":7200},{"d":"2026-02-24","p":"ドリップパックギフト","c":"ギフト","r":"名古屋","q":1,"u":3200,"s":3200},{"d":"2026-02-24","p":"コーヒー豆200g","c":"食品","r":"大阪","q":5,"u":1500,"s":7500},{"d":"2026-02-24","p":"カフェオレベース","c":"食品","r":"名古屋","q":5,"u":980,"s":4900},{"d":"2026-02-24","p":"マグカップ","c":"雑貨","r":"名古屋","q":1,"u":1800,"s":1800},{"d":"2026-02-24","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":3,"u":1200,"s":3600},{"d":"2026-02-25","p":"ギフトセット","c":"ギフト","r":"東京","q":2,"u":4500,"s":9000},{"d":"2026-02-25","p":"定期便（月1）","c":"サブスク","r":"大阪","q":2,"u":3600,"s":7200},{"d":"2026-02-25","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":2,"u":1200,"s":2400},{"d":"2026-02-25","p":"コーヒー豆200g","c":"食品","r":"東京","q":2,"u":1500,"s":3000},{"d":"2026-02-25","p":"タンブラー","c":"雑貨","r":"東京","q":5,"u":2800,"s":14000},{"d":"2026-02-25","p":"定期便（月1）","c":"サブスク","r":"大阪","q":1,"u":3600,"s":3600},{"d":"2026-02-26","p":"タンブラー","c":"雑貨","r":"福岡","q":2,"u":2800,"s":5600},{"d":"2026-02-26","p":"コーヒー豆200g","c":"食品","r":"札幌","q":5,"u":1500,"s":7500},{"d":"2026-02-26","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":1,"u":1500,"s":1500},{"d":"2026-02-27","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":3,"u":3200,"s":9600},{"d":"2026-02-27","p":"カフェオレベース","c":"食品","r":"その他","q":2,"u":980,"s":1960},{"d":"2026-02-27","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-02-28","p":"ドリップパックギフト","c":"ギフト","r":"大阪","q":1,"u":3200,"s":3200},{"d":"2026-02-28","p":"コーヒー豆200g","c":"食品","r":"福岡","q":1,"u":1500,"s":1500},{"d":"2026-02-28","p":"定期便（月1）","c":"サブスク","r":"札幌","q":5,"u":3600,"s":18000},{"d":"2026-02-28","p":"コーヒー豆200g","c":"食品","r":"大阪","q":3,"u":1500,"s":4500},{"d":"2026-02-28","p":"カフェオレベース","c":"食品","r":"大阪","q":1,"u":980,"s":980},{"d":"2026-02-28","p":"定期便（月1）","c":"サブスク","r":"大阪","q":5,"u":3600,"s":18000},{"d":"2026-02-28","p":"ドリップパックギフト","c":"ギフト","r":"福岡","q":1,"u":3200,"s":3200},{"d":"2026-02-28","p":"定期便（月1）","c":"サブスク","r":"東京","q":5,"u":3600,"s":18000},{"d":"2026-03-01","p":"ドリップパックギフト","c":"ギフト","r":"札幌","q":1,"u":3200,"s":3200},{"d":"2026-03-01","p":"タンブラー","c":"雑貨","r":"大阪","q":2,"u":2800,"s":5600},{"d":"2026-03-01","p":"カフェオレベース","c":"食品","r":"福岡","q":1,"u":980,"s":980},{"d":"2026-03-01","p":"カフェオレベース","c":"食品","r":"その他","q":1,"u":980,"s":980},{"d":"2026-03-01","p":"マグカップ","c":"雑貨","r":"名古屋","q":3,"u":1800,"s":5400},{"d":"2026-03-01","p":"ドリップパックギフト","c":"ギフト","r":"札幌","q":1,"u":3200,"s":3200},{"d":"2026-03-01","p":"コーヒー豆200g","c":"食品","r":"福岡","q":3,"u":1500,"s":4500},{"d":"2026-03-02","p":"マグカップ","c":"雑貨","r":"東京","q":2,"u":1800,"s":3600},{"d":"2026-03-02","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-03-03","p":"ギフトセット","c":"ギフト","r":"福岡","q":1,"u":4500,"s":4500},{"d":"2026-03-03","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":1,"u":1200,"s":1200},{"d":"2026-03-04","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-03-04","p":"ドリップコーヒー12杯","c":"食品","r":"名古屋","q":2,"u":1200,"s":2400},{"d":"2026-03-04","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-03-04","p":"ドリップパックギフト","c":"ギフト","r":"名古屋","q":1,"u":3200,"s":3200},{"d":"2026-03-04","p":"定期便（月1）","c":"サブスク","r":"東京","q":1,"u":3600,"s":3600},{"d":"2026-03-05","p":"カフェオレベース","c":"食品","r":"福岡","q":4,"u":980,"s":3920},{"d":"2026-03-05","p":"カフェオレベース","c":"食品","r":"東京","q":2,"u":980,"s":1960},{"d":"2026-03-05","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":5,"u":1200,"s":6000},{"d":"2026-03-05","p":"コーヒー豆200g","c":"食品","r":"その他","q":2,"u":1500,"s":3000},{"d":"2026-03-05","p":"カフェオレベース","c":"食品","r":"大阪","q":5,"u":980,"s":4900},{"d":"2026-03-06","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-03-06","p":"コーヒー豆200g","c":"食品","r":"福岡","q":1,"u":1500,"s":1500},{"d":"2026-03-06","p":"ドリップパックギフト","c":"ギフト","r":"大阪","q":1,"u":3200,"s":3200},{"d":"2026-03-06","p":"ドリップパックギフト","c":"ギフト","r":"福岡","q":5,"u":3200,"s":16000},{"d":"2026-03-06","p":"定期便（月1）","c":"サブスク","r":"福岡","q":3,"u":3600,"s":10800},{"d":"2026-03-06","p":"定期便（月1）","c":"サブスク","r":"福岡","q":1,"u":3600,"s":3600},{"d":"2026-03-07","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-03-07","p":"ギフトセット","c":"ギフト","r":"福岡","q":2,"u":4500,"s":9000},{"d":"2026-03-07","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":2,"u":1200,"s":2400},{"d":"2026-03-07","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":1,"u":1200,"s":1200},{"d":"2026-03-07","p":"カフェオレベース","c":"食品","r":"東京","q":4,"u":980,"s":3920},{"d":"2026-03-07","p":"コーヒー豆200g","c":"食品","r":"大阪","q":1,"u":1500,"s":1500},{"d":"2026-03-07","p":"ドリップパックギフト","c":"ギフト","r":"札幌","q":1,"u":3200,"s":3200},{"d":"2026-03-08","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":3,"u":3200,"s":9600},{"d":"2026-03-08","p":"カフェオレベース","c":"食品","r":"札幌","q":2,"u":980,"s":1960},{"d":"2026-03-08","p":"コーヒー豆200g","c":"食品","r":"東京","q":5,"u":1500,"s":7500},{"d":"2026-03-08","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":3,"u":1200,"s":3600},{"d":"2026-03-08","p":"ギフトセット","c":"ギフト","r":"その他","q":5,"u":4500,"s":22500},{"d":"2026-03-08","p":"ドリップパックギフト","c":"ギフト","r":"大阪","q":3,"u":3200,"s":9600},{"d":"2026-03-08","p":"ドリップコーヒー12杯","c":"食品","r":"名古屋","q":1,"u":1200,"s":1200},{"d":"2026-03-09","p":"タンブラー","c":"雑貨","r":"札幌","q":4,"u":2800,"s":11200},{"d":"2026-03-09","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":1,"u":1200,"s":1200},{"d":"2026-03-09","p":"定期便（月1）","c":"サブスク","r":"名古屋","q":4,"u":3600,"s":14400},{"d":"2026-03-09","p":"コーヒー豆200g","c":"食品","r":"東京","q":3,"u":1500,"s":4500},{"d":"2026-03-09","p":"定期便（月1）","c":"サブスク","r":"大阪","q":1,"u":3600,"s":3600},{"d":"2026-03-10","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":5,"u":1200,"s":6000},{"d":"2026-03-10","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":2,"u":1200,"s":2400},{"d":"2026-03-10","p":"カフェオレベース","c":"食品","r":"大阪","q":4,"u":980,"s":3920},{"d":"2026-03-10","p":"マグカップ","c":"雑貨","r":"名古屋","q":2,"u":1800,"s":3600},{"d":"2026-03-11","p":"定期便（月1）","c":"サブスク","r":"福岡","q":3,"u":3600,"s":10800},{"d":"2026-03-11","p":"マグカップ","c":"雑貨","r":"その他","q":1,"u":1800,"s":1800},{"d":"2026-03-11","p":"マグカップ","c":"雑貨","r":"東京","q":1,"u":1800,"s":1800},{"d":"2026-03-11","p":"コーヒー豆200g","c":"食品","r":"大阪","q":5,"u":1500,"s":7500},{"d":"2026-03-12","p":"タンブラー","c":"雑貨","r":"その他","q":1,"u":2800,"s":2800},{"d":"2026-03-12","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-03-12","p":"ドリップパックギフト","c":"ギフト","r":"大阪","q":2,"u":3200,"s":6400},{"d":"2026-03-12","p":"マグカップ","c":"雑貨","r":"名古屋","q":1,"u":1800,"s":1800},{"d":"2026-03-12","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-03-13","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":1,"u":1200,"s":1200},{"d":"2026-03-13","p":"コーヒー豆200g","c":"食品","r":"札幌","q":1,"u":1500,"s":1500},{"d":"2026-03-13","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":1,"u":1200,"s":1200},{"d":"2026-03-13","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":1,"u":3200,"s":3200},{"d":"2026-03-14","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":3,"u":3200,"s":9600},{"d":"2026-03-14","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":3,"u":1200,"s":3600},{"d":"2026-03-14","p":"タンブラー","c":"雑貨","r":"東京","q":1,"u":2800,"s":2800},{"d":"2026-03-14","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-03-14","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-03-14","p":"マグカップ","c":"雑貨","r":"大阪","q":1,"u":1800,"s":1800},{"d":"2026-03-14","p":"マグカップ","c":"雑貨","r":"福岡","q":4,"u":1800,"s":7200},{"d":"2026-03-15","p":"カフェオレベース","c":"食品","r":"その他","q":1,"u":980,"s":980},{"d":"2026-03-15","p":"カフェオレベース","c":"食品","r":"大阪","q":2,"u":980,"s":1960},{"d":"2026-03-15","p":"カフェオレベース","c":"食品","r":"その他","q":1,"u":980,"s":980},{"d":"2026-03-15","p":"ドリップコーヒー12杯","c":"食品","r":"名古屋","q":1,"u":1200,"s":1200},{"d":"2026-03-15","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":2,"u":1500,"s":3000},{"d":"2026-03-15","p":"コーヒー豆200g","c":"食品","r":"その他","q":2,"u":1500,"s":3000},{"d":"2026-03-15","p":"カフェオレベース","c":"食品","r":"名古屋","q":1,"u":980,"s":980},{"d":"2026-03-16","p":"ドリップパックギフト","c":"ギフト","r":"福岡","q":3,"u":3200,"s":9600},{"d":"2026-03-16","p":"ギフトセット","c":"ギフト","r":"東京","q":1,"u":4500,"s":4500},{"d":"2026-03-17","p":"カフェオレベース","c":"食品","r":"札幌","q":1,"u":980,"s":980},{"d":"2026-03-17","p":"ギフトセット","c":"ギフト","r":"大阪","q":1,"u":4500,"s":4500},{"d":"2026-03-17","p":"コーヒー豆200g","c":"食品","r":"その他","q":2,"u":1500,"s":3000},{"d":"2026-03-17","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-03-18","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":3,"u":1200,"s":3600},{"d":"2026-03-18","p":"タンブラー","c":"雑貨","r":"名古屋","q":2,"u":2800,"s":5600},{"d":"2026-03-18","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-03-18","p":"マグカップ","c":"雑貨","r":"福岡","q":3,"u":1800,"s":5400},{"d":"2026-03-18","p":"ギフトセット","c":"ギフト","r":"その他","q":2,"u":4500,"s":9000},{"d":"2026-03-18","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":1,"u":1500,"s":1500},{"d":"2026-03-19","p":"コーヒー豆200g","c":"食品","r":"東京","q":3,"u":1500,"s":4500},{"d":"2026-03-19","p":"カフェオレベース","c":"食品","r":"福岡","q":2,"u":980,"s":1960},{"d":"2026-03-19","p":"ドリップパックギフト","c":"ギフト","r":"札幌","q":5,"u":3200,"s":16000},{"d":"2026-03-19","p":"ドリップパックギフト","c":"ギフト","r":"名古屋","q":2,"u":3200,"s":6400},{"d":"2026-03-19","p":"ドリップコーヒー12杯","c":"食品","r":"その他","q":3,"u":1200,"s":3600},{"d":"2026-03-19","p":"コーヒー豆200g","c":"食品","r":"東京","q":2,"u":1500,"s":3000},{"d":"2026-03-20","p":"定期便（月1）","c":"サブスク","r":"大阪","q":1,"u":3600,"s":3600},{"d":"2026-03-20","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":1,"u":1200,"s":1200},{"d":"2026-03-20","p":"ギフトセット","c":"ギフト","r":"その他","q":1,"u":4500,"s":4500},{"d":"2026-03-20","p":"タンブラー","c":"雑貨","r":"大阪","q":1,"u":2800,"s":2800},{"d":"2026-03-20","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-03-21","p":"定期便（月1）","c":"サブスク","r":"東京","q":3,"u":3600,"s":10800},{"d":"2026-03-21","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":1,"u":1200,"s":1200},{"d":"2026-03-21","p":"カフェオレベース","c":"食品","r":"名古屋","q":1,"u":980,"s":980},{"d":"2026-03-22","p":"ギフトセット","c":"ギフト","r":"東京","q":1,"u":4500,"s":4500},{"d":"2026-03-22","p":"コーヒー豆200g","c":"食品","r":"福岡","q":1,"u":1500,"s":1500},{"d":"2026-03-22","p":"マグカップ","c":"雑貨","r":"東京","q":1,"u":1800,"s":1800},{"d":"2026-03-22","p":"マグカップ","c":"雑貨","r":"東京","q":1,"u":1800,"s":1800},{"d":"2026-03-22","p":"コーヒー豆200g","c":"食品","r":"東京","q":1,"u":1500,"s":1500},{"d":"2026-03-23","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-03-23","p":"ドリップコーヒー12杯","c":"食品","r":"名古屋","q":1,"u":1200,"s":1200},{"d":"2026-03-23","p":"タンブラー","c":"雑貨","r":"福岡","q":1,"u":2800,"s":2800},{"d":"2026-03-23","p":"カフェオレベース","c":"食品","r":"福岡","q":1,"u":980,"s":980},{"d":"2026-03-23","p":"カフェオレベース","c":"食品","r":"東京","q":1,"u":980,"s":980},{"d":"2026-03-24","p":"タンブラー","c":"雑貨","r":"福岡","q":1,"u":2800,"s":2800},{"d":"2026-03-24","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":1,"u":1200,"s":1200},{"d":"2026-03-24","p":"ドリップパックギフト","c":"ギフト","r":"名古屋","q":3,"u":3200,"s":9600},{"d":"2026-03-24","p":"定期便（月1）","c":"サブスク","r":"東京","q":3,"u":3600,"s":10800},{"d":"2026-03-24","p":"コーヒー豆200g","c":"食品","r":"名古屋","q":2,"u":1500,"s":3000},{"d":"2026-03-24","p":"カフェオレベース","c":"食品","r":"大阪","q":1,"u":980,"s":980},{"d":"2026-03-25","p":"ギフトセット","c":"ギフト","r":"東京","q":2,"u":4500,"s":9000},{"d":"2026-03-25","p":"タンブラー","c":"雑貨","r":"東京","q":3,"u":2800,"s":8400},{"d":"2026-03-25","p":"コーヒー豆200g","c":"食品","r":"その他","q":2,"u":1500,"s":3000},{"d":"2026-03-25","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":1,"u":1200,"s":1200},{"d":"2026-03-25","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":3,"u":1200,"s":3600},{"d":"2026-03-26","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":1,"u":1200,"s":1200},{"d":"2026-03-26","p":"ギフトセット","c":"ギフト","r":"福岡","q":1,"u":4500,"s":4500},{"d":"2026-03-27","p":"ドリップパックギフト","c":"ギフト","r":"名古屋","q":1,"u":3200,"s":3200},{"d":"2026-03-27","p":"ドリップコーヒー12杯","c":"食品","r":"大阪","q":1,"u":1200,"s":1200},{"d":"2026-03-27","p":"コーヒー豆200g","c":"食品","r":"東京","q":2,"u":1500,"s":3000},{"d":"2026-03-27","p":"コーヒー豆200g","c":"食品","r":"大阪","q":1,"u":1500,"s":1500},{"d":"2026-03-27","p":"ドリップパックギフト","c":"ギフト","r":"東京","q":3,"u":3200,"s":9600},{"d":"2026-03-28","p":"マグカップ","c":"雑貨","r":"名古屋","q":1,"u":1800,"s":1800},{"d":"2026-03-28","p":"タンブラー","c":"雑貨","r":"福岡","q":4,"u":2800,"s":11200},{"d":"2026-03-28","p":"カフェオレベース","c":"食品","r":"札幌","q":2,"u":980,"s":1960},{"d":"2026-03-29","p":"マグカップ","c":"雑貨","r":"名古屋","q":4,"u":1800,"s":7200},{"d":"2026-03-29","p":"カフェオレベース","c":"食品","r":"札幌","q":3,"u":980,"s":2940},{"d":"2026-03-29","p":"定期便（月1）","c":"サブスク","r":"東京","q":2,"u":3600,"s":7200},{"d":"2026-03-29","p":"ドリップコーヒー12杯","c":"食品","r":"福岡","q":5,"u":1200,"s":6000},{"d":"2026-03-29","p":"タンブラー","c":"雑貨","r":"名古屋","q":1,"u":2800,"s":2800},{"d":"2026-03-29","p":"定期便（月1）","c":"サブスク","r":"大阪","q":3,"u":3600,"s":10800},{"d":"2026-03-29","p":"マグカップ","c":"雑貨","r":"東京","q":2,"u":1800,"s":3600},{"d":"2026-03-30","p":"ドリップコーヒー12杯","c":"食品","r":"東京","q":2,"u":1200,"s":2400},{"d":"2026-03-30","p":"コーヒー豆200g","c":"食品","r":"福岡","q":2,"u":1500,"s":3000},{"d":"2026-03-30","p":"定期便（月1）","c":"サブスク","r":"札幌","q":1,"u":3600,"s":3600},{"d":"2026-03-30","p":"タンブラー","c":"雑貨","r":"東京","q":1,"u":2800,"s":2800},{"d":"2026-03-30","p":"定期便（月1）","c":"サブスク","r":"福岡","q":1,"u":3600,"s":3600},{"d":"2026-03-31","p":"コーヒー豆200g","c":"食品","r":"大阪","q":3,"u":1500,"s":4500},{"d":"2026-03-31","p":"ドリップパックギフト","c":"ギフト","r":"福岡","q":3,"u":3200,"s":9600}];
+
+  /* ---- fallback inventory: 初期在庫マスタ・入庫ログ(2026年1〜9月) ---- */
+  const EMBEDDED_INVENTORY = [{"p":"ドリップコーヒー12杯","cat":"食品","initial":80,"reorder":30,"cost":660},{"p":"コーヒー豆200g","cat":"食品","initial":90,"reorder":30,"cost":830},{"p":"カフェオレベース","cat":"食品","initial":75,"reorder":25,"cost":540},{"p":"ギフトセット","cat":"ギフト","initial":40,"reorder":15,"cost":2500},{"p":"ドリップパックギフト","cat":"ギフト","initial":55,"reorder":20,"cost":1760},{"p":"マグカップ","cat":"雑貨","initial":60,"reorder":20,"cost":950},{"p":"タンブラー","cat":"雑貨","initial":45,"reorder":15,"cost":1500},{"p":"定期便（月1）","cat":"サブスク","initial":60,"reorder":20,"cost":1900}];
+  const EMBEDDED_RESTOCK = [{"d":"2026-01-01","p":"ドリップコーヒー12杯","q":25},{"d":"2026-01-02","p":"定期便（月1）","q":16},{"d":"2026-01-03","p":"コーヒー豆200g","q":27},{"d":"2026-01-05","p":"カフェオレベース","q":24},{"d":"2026-01-07","p":"ギフトセット","q":11},{"d":"2026-01-09","p":"ドリップパックギフト","q":16},{"d":"2026-01-11","p":"マグカップ","q":17},{"d":"2026-01-13","p":"タンブラー","q":13},{"d":"2026-01-15","p":"ドリップコーヒー12杯","q":24},{"d":"2026-01-17","p":"定期便（月1）","q":19},{"d":"2026-01-19","p":"ギフトセット","q":9},{"d":"2026-01-19","p":"コーヒー豆200g","q":29},{"d":"2026-01-20","p":"カフェオレベース","q":16},{"d":"2026-01-22","p":"ドリップパックギフト","q":21},{"d":"2026-01-25","p":"タンブラー","q":18},{"d":"2026-01-27","p":"ドリップコーヒー12杯","q":28},{"d":"2026-01-28","p":"マグカップ","q":16},{"d":"2026-01-30","p":"定期便（月1）","q":13},{"d":"2026-02-01","p":"カフェオレベース","q":26},{"d":"2026-02-02","p":"コーヒー豆200g","q":38},{"d":"2026-02-03","p":"ギフトセット","q":11},{"d":"2026-02-06","p":"ドリップパックギフト","q":15},{"d":"2026-02-10","p":"タンブラー","q":11},{"d":"2026-02-11","p":"定期便（月1）","q":16},{"d":"2026-02-13","p":"マグカップ","q":18},{"d":"2026-02-14","p":"ドリップコーヒー12杯","q":23},{"d":"2026-02-16","p":"ギフトセット","q":12},{"d":"2026-02-18","p":"カフェオレベース","q":25},{"d":"2026-02-20","p":"コーヒー豆200g","q":21},{"d":"2026-02-22","p":"タンブラー","q":11},{"d":"2026-02-24","p":"ドリップパックギフト","q":19},{"d":"2026-02-24","p":"定期便（月1）","q":16},{"d":"2026-02-25","p":"マグカップ","q":21},{"d":"2026-03-02","p":"ギフトセット","q":10},{"d":"2026-03-03","p":"ドリップコーヒー12杯","q":32},{"d":"2026-03-04","p":"カフェオレベース","q":31},{"d":"2026-03-04","p":"コーヒー豆200g","q":27},{"d":"2026-03-06","p":"タンブラー","q":17},{"d":"2026-03-11","p":"ドリップパックギフト","q":17},{"d":"2026-03-12","p":"マグカップ","q":15},{"d":"2026-03-12","p":"定期便（月1）","q":16},{"d":"2026-03-16","p":"コーヒー豆200g","q":27},{"d":"2026-03-17","p":"ギフトセット","q":10},{"d":"2026-03-20","p":"ドリップコーヒー12杯","q":27},{"d":"2026-03-22","p":"カフェオレベース","q":19},{"d":"2026-03-22","p":"タンブラー","q":13},{"d":"2026-03-24","p":"ドリップパックギフト","q":17},{"d":"2026-03-24","p":"マグカップ","q":18},{"d":"2026-03-25","p":"定期便（月1）","q":16},{"d":"2026-03-30","p":"ギフトセット","q":10},{"d":"2026-04-02","p":"ドリップコーヒー12杯","q":28},{"d":"2026-04-03","p":"コーヒー豆200g","q":22},{"d":"2026-04-05","p":"タンブラー","q":15},{"d":"2026-04-06","p":"ドリップパックギフト","q":11},{"d":"2026-04-07","p":"カフェオレベース","q":22},{"d":"2026-04-08","p":"定期便（月1）","q":27},{"d":"2026-04-09","p":"マグカップ","q":20},{"d":"2026-04-12","p":"ギフトセット","q":9},{"d":"2026-04-17","p":"ドリップコーヒー12杯","q":26},{"d":"2026-04-18","p":"コーヒー豆200g","q":22},{"d":"2026-04-19","p":"ドリップパックギフト","q":21},{"d":"2026-04-23","p":"タンブラー","q":16},{"d":"2026-04-24","p":"カフェオレベース","q":29},{"d":"2026-04-24","p":"ギフトセット","q":12},{"d":"2026-04-25","p":"マグカップ","q":16},{"d":"2026-04-26","p":"定期便（月1）","q":16},{"d":"2026-04-30","p":"コーヒー豆200g","q":26},{"d":"2026-05-03","p":"ドリップコーヒー12杯","q":25},{"d":"2026-05-04","p":"ドリップパックギフト","q":22},{"d":"2026-05-06","p":"ギフトセット","q":14},{"d":"2026-05-08","p":"タンブラー","q":9},{"d":"2026-05-11","p":"マグカップ","q":24},{"d":"2026-05-12","p":"カフェオレベース","q":19},{"d":"2026-05-12","p":"定期便（月1）","q":17},{"d":"2026-05-15","p":"コーヒー豆200g","q":23},{"d":"2026-05-15","p":"ドリップコーヒー12杯","q":23},{"d":"2026-05-20","p":"タンブラー","q":16},{"d":"2026-05-21","p":"ギフトセット","q":9},{"d":"2026-05-21","p":"ドリップパックギフト","q":22},{"d":"2026-05-25","p":"カフェオレベース","q":29},{"d":"2026-05-27","p":"定期便（月1）","q":17},{"d":"2026-05-28","p":"マグカップ","q":22},{"d":"2026-05-29","p":"コーヒー豆200g","q":20},{"d":"2026-05-30","p":"ドリップコーヒー12杯","q":19},{"d":"2026-06-03","p":"ギフトセット","q":10},{"d":"2026-06-07","p":"タンブラー","q":9},{"d":"2026-06-08","p":"ドリップパックギフト","q":21},{"d":"2026-06-10","p":"コーヒー豆200g","q":30},{"d":"2026-06-11","p":"カフェオレベース","q":21},{"d":"2026-06-12","p":"定期便（月1）","q":17},{"d":"2026-06-13","p":"ドリップコーヒー12杯","q":29},{"d":"2026-06-14","p":"マグカップ","q":17},{"d":"2026-06-15","p":"ギフトセット","q":11},{"d":"2026-06-19","p":"タンブラー","q":12},{"d":"2026-06-24","p":"カフェオレベース","q":26},{"d":"2026-06-24","p":"定期便（月1）","q":14},{"d":"2026-06-25","p":"コーヒー豆200g","q":26},{"d":"2026-06-25","p":"ドリップパックギフト","q":11},{"d":"2026-06-28","p":"ギフトセット","q":15},{"d":"2026-06-28","p":"ドリップコーヒー12杯","q":21},{"d":"2026-06-29","p":"マグカップ","q":16},{"d":"2026-07-02","p":"タンブラー","q":14},{"d":"2026-07-06","p":"定期便（月1）","q":23},{"d":"2026-07-07","p":"ドリップパックギフト","q":17},{"d":"2026-07-08","p":"カフェオレベース","q":15},{"d":"2026-07-10","p":"コーヒー豆200g","q":21},{"d":"2026-07-11","p":"マグカップ","q":23},{"d":"2026-07-12","p":"ドリップコーヒー12杯","q":30},{"d":"2026-07-14","p":"タンブラー","q":12},{"d":"2026-07-15","p":"ギフトセット","q":11},{"d":"2026-07-20","p":"カフェオレベース","q":24},{"d":"2026-07-23","p":"定期便（月1）","q":20},{"d":"2026-07-24","p":"コーヒー豆200g","q":30},{"d":"2026-07-24","p":"ドリップパックギフト","q":10},{"d":"2026-07-28","p":"タンブラー","q":11},{"d":"2026-07-29","p":"マグカップ","q":22},{"d":"2026-07-30","p":"ギフトセット","q":14},{"d":"2026-07-30","p":"ドリップコーヒー12杯","q":31},{"d":"2026-08-03","p":"カフェオレベース","q":16},{"d":"2026-08-05","p":"ドリップパックギフト","q":22},{"d":"2026-08-05","p":"定期便（月1）","q":17},{"d":"2026-08-06","p":"コーヒー豆200g","q":24},{"d":"2026-08-10","p":"タンブラー","q":19},{"d":"2026-08-13","p":"ギフトセット","q":10},{"d":"2026-08-15","p":"カフェオレベース","q":18},{"d":"2026-08-15","p":"マグカップ","q":20},{"d":"2026-08-16","p":"ドリップコーヒー12杯","q":22},{"d":"2026-08-19","p":"定期便（月1）","q":18},{"d":"2026-08-21","p":"コーヒー豆200g","q":31},{"d":"2026-08-23","p":"ドリップパックギフト","q":16},{"d":"2026-08-27","p":"ギフトセット","q":12},{"d":"2026-08-28","p":"カフェオレベース","q":30},{"d":"2026-08-28","p":"タンブラー","q":9},{"d":"2026-08-29","p":"マグカップ","q":15},{"d":"2026-08-31","p":"ドリップコーヒー12杯","q":23},{"d":"2026-09-05","p":"定期便（月1）","q":22},{"d":"2026-09-07","p":"ドリップパックギフト","q":20},{"d":"2026-09-08","p":"コーヒー豆200g","q":37},{"d":"2026-09-10","p":"タンブラー","q":9},{"d":"2026-09-11","p":"ギフトセット","q":16},{"d":"2026-09-11","p":"マグカップ","q":21},{"d":"2026-09-14","p":"カフェオレベース","q":31},{"d":"2026-09-15","p":"ドリップコーヒー12杯","q":26},{"d":"2026-09-20","p":"定期便（月1）","q":15},{"d":"2026-09-22","p":"タンブラー","q":14},{"d":"2026-09-22","p":"ドリップパックギフト","q":19},{"d":"2026-09-25","p":"コーヒー豆200g","q":34},{"d":"2026-09-25","p":"マグカップ","q":17},{"d":"2026-09-29","p":"ギフトセット","q":13}];
+
+  const KNOWN_CATS = ['食品','ギフト','雑貨','サブスク'];
+
+  const state = {
+    allData: [],
+    catList: [],
+    cats: new Set(),
+    from: null, to: null,
+    dataMin: null, dataMax: null,
+    sourceValue: 'embedded',
+    sourceLabel: '内蔵データ(2026年1〜3月・オフライン)',
+    droppedFiles: {},
+    inventoryMaster: EMBEDDED_INVENTORY,
+    restockLog: EMBEDDED_RESTOCK,
+    inventorySourceLabel: '内蔵データ(オフライン)',
+  };
+
+  const yen = n => '¥' + Math.round(n).toLocaleString('ja-JP');
+  const fmtNum = n => Math.round(n).toLocaleString('ja-JP');
+  const monthLabel = ym => (parseInt(ym.split('-')[1],10)) + '月';
+
+  function colorVarFor(cat){
+    const ki = KNOWN_CATS.indexOf(cat);
+    if(ki>=0) return `--cat-${ki+1}`;
+    const extra = state.catList.filter(c=>KNOWN_CATS.indexOf(c)<0);
+    const i = extra.indexOf(cat);
+    return `--cat-${5 + (i % 4)}`;
+  }
+
+  /* ---------- CSV parsing ---------- */
+  function parseCSV(text){
+    text = text.replace(/^﻿/, '').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+    const lines = text.split('\n').filter(l=>l.trim().length>0);
+    if(lines.length<2) return [];
+    const header = lines[0].split(',').map(h=>h.trim());
+    const idx = {
+      d: header.indexOf('日付'), p: header.indexOf('商品名'), c: header.indexOf('カテゴリ'),
+      r: header.indexOf('地域'), q: header.indexOf('数量'), u: header.indexOf('単価'), s: header.indexOf('売上金額'),
+    };
+    const rows = [];
+    for(let i=1;i<lines.length;i++){
+      const cols = lines[i].split(',');
+      if(cols.length < header.length) continue;
+      const q = parseInt(cols[idx.q],10), u = parseInt(cols[idx.u],10);
+      let s = parseInt(cols[idx.s],10);
+      if(isNaN(s)) s = q*u;
+      rows.push({ d: (cols[idx.d]||'').trim(), p: (cols[idx.p]||'').trim(), c: (cols[idx.c]||'').trim(), r: (cols[idx.r]||'').trim(), q, u, s });
+    }
+    return rows;
+  }
+
+  function parseInventoryCSV(text){
+    text = text.replace(/^﻿/, '').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+    const lines = text.split('\n').filter(l=>l.trim().length>0);
+    if(lines.length<2) return [];
+    const header = lines[0].split(',').map(h=>h.trim());
+    const idx = {
+      p: header.indexOf('商品名'), cat: header.indexOf('カテゴリ'),
+      initial: header.indexOf('初期在庫数'), reorder: header.indexOf('発注点'), cost: header.indexOf('原価'),
+    };
+    const rows = [];
+    for(let i=1;i<lines.length;i++){
+      const cols = lines[i].split(',');
+      if(cols.length < header.length) continue;
+      rows.push({
+        p: (cols[idx.p]||'').trim(), cat: (cols[idx.cat]||'').trim(),
+        initial: parseInt(cols[idx.initial],10)||0, reorder: parseInt(cols[idx.reorder],10)||0,
+        cost: parseInt(cols[idx.cost],10)||0,
+      });
+    }
+    return rows;
+  }
+
+  function parseRestockCSV(text){
+    text = text.replace(/^﻿/, '').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+    const lines = text.split('\n').filter(l=>l.trim().length>0);
+    if(lines.length<2) return [];
+    const header = lines[0].split(',').map(h=>h.trim());
+    const idx = { d: header.indexOf('日付'), p: header.indexOf('商品名'), q: header.indexOf('入庫数') };
+    const rows = [];
+    for(let i=1;i<lines.length;i++){
+      const cols = lines[i].split(',');
+      if(cols.length < header.length) continue;
+      rows.push({ d: (cols[idx.d]||'').trim(), p: (cols[idx.p]||'').trim(), q: parseInt(cols[idx.q],10)||0 });
+    }
+    return rows;
+  }
+
+  /* ---------- rendering (data-source agnostic) ---------- */
+  function renderKPIs(filtered, days){
+    const total = filtered.reduce((s,r)=>s+r.s,0);
+    const qty = filtered.reduce((s,r)=>s+r.q,0);
+    const cnt = filtered.length;
+    const avgOrder = cnt>0 ? total/cnt : 0;
+    const avgDaily = days>0 ? total/days : 0;
+
+    document.getElementById('headTotal').textContent = yen(total);
+    document.getElementById('kpiQty').innerHTML = fmtNum(qty) + '<span style="font-size:14px;font-weight:600;"> 点</span>';
+    document.getElementById('kpiQtySub').textContent = `全${fmtNum(cnt)}件の取引`;
+    document.getElementById('kpiAvgOrder').textContent = cnt>0 ? yen(avgOrder) : '¥0';
+    document.getElementById('kpiAvgDaily').textContent = yen(avgDaily);
+    document.getElementById('kpiAvgDailySub').textContent = `${days}日間の平均`;
+
+    const catTotals = {};
+    filtered.forEach(r=>{ catTotals[r.c] = (catTotals[r.c]||0) + r.s; });
+    const entries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+    if(entries.length>0 && total>0){
+      const [name,val] = entries[0];
+      document.getElementById('kpiTopCat').textContent = name;
+      document.getElementById('kpiTopCatSub').textContent = `${yen(val)}(${(val/total*100).toFixed(1)}%)`;
+    } else {
+      document.getElementById('kpiTopCat').textContent = '-';
+      document.getElementById('kpiTopCatSub').textContent = '該当データなし';
+    }
+  }
+
+  function renderMonthly(filtered){
+    const groups = {};
+    filtered.forEach(r=>{
+      const ym = r.d.slice(0,7);
+      if(!groups[ym]) groups[ym] = {rev:0,cnt:0};
+      groups[ym].rev += r.s; groups[ym].cnt++;
+    });
+    const months = Object.keys(groups).sort();
+    const svg = document.getElementById('monthlySvg');
+    const side = document.getElementById('monthlySide');
+
+    if(months.length===0){
+      svg.innerHTML = '<text x="320" y="140" text-anchor="middle" fill="var(--ink-muted)" font-family="Figtree, sans-serif" font-size="14">該当するデータがありません</text>';
+      side.innerHTML = '';
+      return;
+    }
+
+    const maxVal = Math.max(...months.map(m=>groups[m].rev));
+    const n = months.length;
+    const avail = 560, gap = 32, marginLeft = 40;
+    const barW = Math.min(160, (avail - gap*(n-1)) / n);
+    const totalW = n*barW + (n-1)*gap;
+    const startX = marginLeft + (avail-totalW)/2;
+    const y0 = 230, maxH = 190;
+
+    let parts = ['<line class="axis" x1="40" y1="230" x2="600" y2="230"></line>'];
+    const barTops = [];
+    months.forEach((ym,i)=>{
+      const v = groups[ym].rev;
+      const h = maxVal>0 ? (v/maxVal)*maxH : 0;
+      const x = startX + i*(barW+gap);
+      const y = y0 - h;
+      barTops.push(y);
+      const isPeak = v===maxVal;
+      parts.push(`<rect class="bar${isPeak?' peak':''}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="6"></rect>`);
+      parts.push(`<text class="vlabel" x="${(x+barW/2).toFixed(1)}" y="${(y-10).toFixed(1)}" text-anchor="middle">${yen(v)}</text>`);
+      parts.push(`<text class="mlabel" x="${(x+barW/2).toFixed(1)}" y="252" text-anchor="middle">${monthLabel(ym)}</text>`);
+      parts.push(`<text class="mlabel" x="${(x+barW/2).toFixed(1)}" y="270" text-anchor="middle" fill-opacity="0.7">${groups[ym].cnt}件</text>`);
+    });
+    for(let i=1;i<months.length;i++){
+      const prevV = groups[months[i-1]].rev, v = groups[months[i]].rev;
+      const delta = prevV>0 ? ((v-prevV)/prevV*100) : 0;
+      const x1c = startX + (i-1)*(barW+gap) + barW/2;
+      const x2c = startX + i*(barW+gap) + barW/2;
+      const midY = Math.min(barTops[i-1], barTops[i]) - 16;
+      const color = delta>=0 ? 'var(--good)' : 'var(--bad)';
+      const arrow = delta>=0 ? '▲' : '▼';
+      parts.push(`<text class="delta" x="${((x1c+x2c)/2).toFixed(1)}" y="${midY.toFixed(1)}" text-anchor="middle" fill="${color}">${arrow}${Math.abs(delta).toFixed(1)}%</text>`);
+    }
+    svg.innerHTML = parts.join('');
+
+    let sideParts = '';
+    if(n>=2){
+      const first = months[0], last = months[months.length-1];
+      const diff = groups[last].rev-groups[first].rev;
+      const change = groups[first].rev>0 ? (diff/groups[first].rev*100) : 0;
+      const cls = change>=0 ? 'up' : 'down';
+      const sign = change>=0 ? '+' : '-';
+      sideParts += `<div class="month-stat"><div class="k">${monthLabel(first)} → ${monthLabel(last)}</div><div class="v ${cls} num">${sign}${yen(Math.abs(diff))}(${sign}${Math.abs(change).toFixed(1)}%)</div></div>`;
+    }
+    const peakYm = months.reduce((a,b)=> groups[a].rev>=groups[b].rev ? a : b);
+    sideParts += `<div class="month-stat"><div class="k">最も売れた月</div><div class="v">${monthLabel(peakYm)}・${groups[peakYm].cnt}件</div></div>`;
+    sideParts += `<div class="month-stat"><div class="k">対象月数</div><div class="v num">${n}ヶ月</div></div>`;
+    side.innerHTML = sideParts;
+  }
+
+  function renderRank(containerId, filtered, keyFn, extra){
+    const groups = {};
+    filtered.forEach(r=>{
+      const k = keyFn(r);
+      if(!groups[k]) groups[k] = {rev:0,qty:0,cnt:0};
+      groups[k].rev += r.s; groups[k].qty += r.q; groups[k].cnt++;
+    });
+    const items = Object.entries(groups).sort((a,b)=>b[1].rev-a[1].rev);
+    const el = document.getElementById(containerId);
+    if(items.length===0){
+      el.innerHTML = '<p class="empty-msg">該当するデータがありません</p>';
+      return;
+    }
+    const maxV = items[0][1].rev;
+    el.innerHTML = items.map(([name,v],i)=>{
+      const pct = (v.rev/maxV*100).toFixed(1);
+      const top = i===0 ? ' top' : '';
+      const no = String(i+1).padStart(2,'0');
+      const sub = extra ? `<span class="num m">${v.qty}点・${v.cnt}件</span>` : '';
+      return `<div class="rank-row${top}">
+        <div class="rank-no">${no}</div>
+        <div class="rank-name">${name}</div>
+        <div class="rank-track"><div class="rank-fill" style="width:${pct}%"></div></div>
+        <div class="rank-value"><span class="num y">${yen(v.rev)}</span>${sub}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderDonut(filtered){
+    const totals = {};
+    let grand = 0;
+    filtered.forEach(r=>{
+      if(state.cats.has(r.c)){ totals[r.c] = (totals[r.c]||0) + r.s; grand += r.s; }
+    });
+    const svg = document.getElementById('donutSvg');
+    const legend = document.getElementById('donutLegend');
+    const present = state.catList.filter(c => state.cats.has(c) && (totals[c]||0) > 0);
+
+    if(grand===0 || present.length===0){
+      svg.innerHTML = '<text x="90" y="94" text-anchor="middle" fill="var(--ink-muted)" font-family="Figtree, sans-serif" font-size="13">データなし</text>';
+      legend.innerHTML = '';
+      return;
+    }
+
+    const r = 70, C = 2*Math.PI*r;
+    let cum = 0;
+    let arcs = `<circle cx="90" cy="90" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="26"></circle>`;
+    present.forEach(c=>{
+      const frac = totals[c]/grand;
+      const len = frac*C;
+      arcs += `<circle cx="90" cy="90" r="${r}" fill="none" stroke="var(${colorVarFor(c)})" stroke-width="26" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-cum).toFixed(2)}"></circle>`;
+      cum += len;
+    });
+    svg.innerHTML = `<g transform="rotate(-90 90 90)">${arcs}</g>
+      <text x="90" y="86" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="20" font-weight="700" fill="var(--ink)">${present.length}</text>
+      <text x="90" y="104" text-anchor="middle" font-family="Figtree, sans-serif" font-size="11" fill="var(--ink-muted)">カテゴリ</text>`;
+
+    legend.innerHTML = present.slice().sort((a,b)=>totals[b]-totals[a]).map(c=>{
+      const pct = (totals[c]/grand*100).toFixed(1);
+      return `<div class="legend-row"><span class="legend-dot" style="background:var(${colorVarFor(c)})"></span><span class="name">${c}</span><span class="pct num">${pct}%</span><span class="amt num">${yen(totals[c])}</span></div>`;
+    }).join('');
+  }
+
+  function renderInventory(){
+    const wrap = document.getElementById('inventoryBody');
+    const kpiWrap = document.getElementById('inventoryKpis');
+    if(!state.inventoryMaster || state.inventoryMaster.length===0){
+      wrap.innerHTML = '<p class="empty-msg">在庫データが読み込まれていません。「在庫データ.csv」をこの画面にドラッグ&ドロップしてください。</p>';
+      kpiWrap.innerHTML = '';
+      return;
+    }
+    /* 出庫は「選択中の売上データ」の日付範囲内・カテゴリ関係なく全件を実際の消費とみなす */
+    const soldInRange = {};
+    state.allData.forEach(r=>{
+      if(r.d>=state.from && r.d<=state.to){ soldInRange[r.p] = (soldInRange[r.p]||0) + r.q; }
+    });
+    const restockInRange = {};
+    (state.restockLog||[]).forEach(r=>{
+      if(r.d>=state.from && r.d<=state.to){ restockInRange[r.p] = (restockInRange[r.p]||0) + r.q; }
+    });
+
+    const items = state.inventoryMaster.map(m=>{
+      const restocked = restockInRange[m.p] || 0;
+      const sold = soldInRange[m.p] || 0;
+      const current = m.initial + restocked - sold;
+      const display = Math.max(0, current);
+      let status, statusClass;
+      if(current<=0){ status='欠品'; statusClass='crit'; }
+      else if(current<=m.reorder){ status='要発注'; statusClass='warn'; }
+      else { status='適正'; statusClass='good'; }
+      return {...m, restocked, sold, current, display, status, statusClass};
+    });
+
+    const totalUnits = items.reduce((s,it)=>s+it.display,0);
+    const totalValue = items.reduce((s,it)=>s+it.display*it.cost,0);
+    const alertCount = items.filter(it=>it.statusClass!=='good').length;
+    kpiWrap.innerHTML = `
+      <div class="kpi">
+        <div class="lbl">在庫総数</div>
+        <div class="val num">${fmtNum(totalUnits)}<span style="font-size:14px;font-weight:600;"> 点</span></div>
+        <div class="sub">${state.from}〜${state.to} 時点</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">在庫金額(原価ベース)</div>
+        <div class="val num">${yen(totalValue)}</div>
+        <div class="sub">現在庫 × 原価の合計</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">要対応の商品</div>
+        <div class="val ${alertCount>0?'num':''}" style="${alertCount>0?'color:var(--bad)':''}">${alertCount}<span style="font-size:14px;font-weight:600;"> 品目</span></div>
+        <div class="sub">要発注・欠品の合計</div>
+      </div>`;
+
+    wrap.innerHTML = items.map(it=>{
+      const maxScale = Math.max(it.initial, it.display, 1);
+      const fillPct = (Math.min(it.display,maxScale)/maxScale*100).toFixed(1);
+      const reorderPct = (Math.min(it.reorder,maxScale)/maxScale*100).toFixed(1);
+      return `<div class="inv-row">
+        <div class="inv-name">${it.p}</div>
+        <div class="inv-track">
+          <div class="inv-fill ${it.statusClass}" style="width:${fillPct}%"></div>
+          <div class="inv-marker" style="left:${reorderPct}%" title="発注点 ${it.reorder}点"></div>
+        </div>
+        <div class="inv-nums">
+          <span class="num cur">${fmtNum(it.display)}点</span>
+          <span class="num delta">入${fmtNum(it.restocked)}・出${fmtNum(it.sold)}</span>
+        </div>
+        <div class="status-pill ${it.statusClass}">${it.status}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function computeAndRender(){
+    const filtered = state.allData.filter(r => r.d >= state.from && r.d <= state.to && state.cats.has(r.c));
+    const days = Math.max(1, Math.round((new Date(state.to) - new Date(state.from)) / 86400000) + 1);
+    renderKPIs(filtered, days);
+    renderMonthly(filtered);
+    renderRank('productRank', filtered, r=>r.p, true);
+    renderDonut(filtered);
+    renderRank('regionRank', filtered, r=>r.r, false);
+    renderInventory();
+
+    document.getElementById('headSubtitle').textContent =
+      `${state.dataMin}〜${state.dataMax}・全${fmtNum(state.allData.length)}件の取引データより集計(${state.sourceLabel})`;
+    document.getElementById('footNote').textContent =
+      `${state.sourceLabel}(${fmtNum(state.allData.length)}件・${state.dataMin}〜${state.dataMax})を集計・絞り込み結果${fmtNum(filtered.length)}件`;
+  }
+
+  /* ---------- filter UI ---------- */
+  function clearPresetActive(){
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  }
+
+  function lastDayOfMonth(ym){
+    const [y,m] = ym.split('-').map(Number);
+    return new Date(y, m, 0).getDate();
+  }
+
+  function renderPresets(){
+    const container = document.getElementById('presetGroup');
+    const months = [...new Set(state.allData.map(r=>r.d.slice(0,7)))].sort();
+    let html = `<button class="preset-btn active" data-preset="all">全期間</button>`;
+    months.forEach(ym=>{ html += `<button class="preset-btn" data-preset="${ym}">${monthLabel(ym)}</button>`; });
+    container.innerHTML = html;
+    container.querySelectorAll('.preset-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.preset;
+        if(key==='all'){ state.from = state.dataMin; state.to = state.dataMax; }
+        else { state.from = `${key}-01`; state.to = `${key}-${String(lastDayOfMonth(key)).padStart(2,'0')}`; }
+        document.getElementById('fromDate').value = state.from;
+        document.getElementById('toDate').value = state.to;
+        container.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active', b===btn));
+        computeAndRender();
+      });
+    });
+  }
+
+  function renderCategoryChips(){
+    const container = document.getElementById('catChipGroup');
+    container.innerHTML = state.catList.map(c=>{
+      const active = state.cats.has(c) ? ' active' : '';
+      return `<button class="cat-chip${active}" data-cat="${c}" style="--chip-color:var(${colorVarFor(c)})"><span class="dot"></span>${c}</button>`;
+    }).join('');
+    container.querySelectorAll('.cat-chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const c = chip.dataset.cat;
+        if(state.cats.has(c)) state.cats.delete(c); else state.cats.add(c);
+        chip.classList.toggle('active');
+        computeAndRender();
+      });
+    });
+  }
+
+  function updateDateBounds(){
+    const dates = state.allData.map(r=>r.d).filter(Boolean).sort();
+    state.dataMin = dates[0]; state.dataMax = dates[dates.length-1];
+    state.from = state.dataMin; state.to = state.dataMax;
+    const fromEl = document.getElementById('fromDate'), toEl = document.getElementById('toDate');
+    fromEl.min = state.dataMin; fromEl.max = state.dataMax; fromEl.value = state.dataMin;
+    toEl.min = state.dataMin; toEl.max = state.dataMax; toEl.value = state.dataMax;
+  }
+
+  function setStatus(msg, isErr){
+    const el = document.getElementById('sourceStatus');
+    el.textContent = msg || '';
+    el.classList.toggle('err', !!isErr);
+  }
+
+  function applyDataset(rows, sourceValue, sourceLabel){
+    state.allData = rows;
+    state.sourceValue = sourceValue;
+    state.sourceLabel = sourceLabel;
+    const presentCats = [...new Set(rows.map(r=>r.c))];
+    state.catList = KNOWN_CATS.filter(c=>presentCats.includes(c)).concat(presentCats.filter(c=>KNOWN_CATS.indexOf(c)<0).sort());
+    state.cats = new Set(state.catList);
+    updateDateBounds();
+    renderPresets();
+    renderCategoryChips();
+    setStatus(`${fmtNum(rows.length)}件を読み込みました`, false);
+    computeAndRender();
+  }
+
+  async function loadDataset(source, label){
+    setStatus('読み込み中…');
+    try{
+      let rows;
+      if(source === 'embedded'){
+        rows = EMBEDDED_DATA;
+      } else {
+        const res = await fetch(source, {cache:'no-store'});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        rows = parseCSV(await res.text());
+      }
+      if(rows.length===0) throw new Error('データ行が見つかりません');
+      applyDataset(rows, source, label);
+    }catch(err){
+      setStatus(`読み込みエラー: ${err.message} — Pythonサーバー経由(http://localhost:8000/)で開いていますか？`, true);
+    }
+  }
+
+  function addDroppedOption(value, label){
+    const select = document.getElementById('datasetSelect');
+    let opt = Array.from(select.options).find(o=>o.value===value);
+    if(!opt){
+      opt = document.createElement('option');
+      opt.value = value;
+      select.insertBefore(opt, select.firstChild);
+    }
+    opt.textContent = label;
+    select.value = value;
+  }
+
+  async function loadInventoryMasterFromFile(file){
+    setStatus(`"${file.name}" を在庫マスタとして読み込み中…`);
+    try{
+      const rows = parseInventoryCSV(await file.text());
+      if(rows.length===0) throw new Error('データ行が見つかりません(列構成: 商品名,カテゴリ,初期在庫数,発注点,原価)');
+      state.inventoryMaster = rows;
+      state.inventorySourceLabel = `${file.name}(ドロップ済み)`;
+      setStatus(`在庫マスタ ${fmtNum(rows.length)}品目を読み込みました`, false);
+      renderInventory();
+    }catch(err){
+      setStatus(`読み込みエラー: ${err.message}`, true);
+    }
+  }
+
+  async function loadRestockFromFile(file){
+    setStatus(`"${file.name}" を入庫ログとして読み込み中…`);
+    try{
+      const rows = parseRestockCSV(await file.text());
+      if(rows.length===0) throw new Error('データ行が見つかりません(列構成: 日付,商品名,入庫数)');
+      state.restockLog = rows;
+      setStatus(`入庫ログ ${fmtNum(rows.length)}件を読み込みました`, false);
+      renderInventory();
+    }catch(err){
+      setStatus(`読み込みエラー: ${err.message}`, true);
+    }
+  }
+
+  async function loadDatasetFromFile(file){
+    setStatus(`"${file.name}" を読み込み中…`);
+    try{
+      if(!file.name.toLowerCase().endsWith('.csv')){
+        throw new Error('CSVファイル(.csv)のみ読み込めます');
+      }
+      const text = await file.text();
+      const rows = parseCSV(text);
+      if(rows.length===0) throw new Error('データ行が見つかりません(列構成を確認してください: 日付,商品名,カテゴリ,地域,数量,単価,売上金額)');
+      const value = `dropped:${file.name}`;
+      const label = `${file.name}(ドロップ済み)`;
+      state.droppedFiles[value] = {rows, label};
+      addDroppedOption(value, label);
+      applyDataset(rows, value, label);
+    }catch(err){
+      setStatus(`読み込みエラー: ${err.message}`, true);
+    }
+  }
+
+  /* ---------- drag & drop ---------- */
+  let dragCounter = 0;
+  function setOverlay(show, warn, text){
+    const overlay = document.getElementById('dropOverlay');
+    const label = document.getElementById('dropOverlayText');
+    if(text) label.textContent = text;
+    overlay.classList.toggle('show', show);
+    overlay.querySelector('.small').classList.toggle('warn', !!warn);
+  }
+  window.addEventListener('dragenter', e=>{
+    if(!e.dataTransfer || !Array.from(e.dataTransfer.types||[]).includes('Files')) return;
+    e.preventDefault();
+    dragCounter++;
+    setOverlay(true, false, 'ここにCSVファイルをドロップ');
+  });
+  window.addEventListener('dragover', e=>{
+    if(!e.dataTransfer || !Array.from(e.dataTransfer.types||[]).includes('Files')) return;
+    e.preventDefault();
+  });
+  window.addEventListener('dragleave', e=>{
+    dragCounter = Math.max(0, dragCounter-1);
+    if(dragCounter===0) setOverlay(false);
+  });
+  window.addEventListener('drop', async e=>{
+    e.preventDefault();
+    dragCounter = 0;
+    setOverlay(false);
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if(!file) return;
+    if(!file.name.toLowerCase().endsWith('.csv')){
+      setOverlay(true, true, `"${file.name}" はCSVファイルではありません`);
+      setTimeout(()=>setOverlay(false), 1800);
+      return;
+    }
+    if(isInventoryFile(file.name)){
+      await loadRestockFromFile(file);
+    } else if(isStockMasterFile(file.name)){
+      await loadInventoryMasterFromFile(file);
+    } else {
+      await loadDatasetFromFile(file);
+    }
+  });
+
+  function isInventoryFile(name){ return name.indexOf('入庫') >= 0; }
+  function isStockMasterFile(name){ return name.indexOf('在庫') >= 0 && name.indexOf('入庫') < 0; }
+
+  async function tryLoadInventoryFiles(hrefs){
+    const restockHref = hrefs.find(h=>isInventoryFile(decodeURIComponent(h)));
+    const masterHref = hrefs.find(h=>isStockMasterFile(decodeURIComponent(h)));
+    try{
+      if(masterHref){
+        const res = await fetch(masterHref, {cache:'no-store'});
+        const rows = parseInventoryCSV(await res.text());
+        if(rows.length>0){ state.inventoryMaster = rows; state.inventorySourceLabel = decodeURIComponent(masterHref); }
+      }
+      if(restockHref){
+        const res = await fetch(restockHref, {cache:'no-store'});
+        const rows = parseRestockCSV(await res.text());
+        if(rows.length>0){ state.restockLog = rows; }
+      }
+    }catch(e){ /* サーバー未起動などの場合は内蔵データのまま */ }
+  }
+
+  async function discoverAndPopulateSelect(){
+    const select = document.getElementById('datasetSelect');
+    const options = [{value:'embedded', label:'内蔵データ(2026年1〜3月・オフライン)'}];
+    try{
+      const res = await fetch('./', {cache:'no-store'});
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const hrefs = Array.from(doc.querySelectorAll('a'))
+        .map(a=>a.getAttribute('href'))
+        .filter(h=>h && h.toLowerCase().endsWith('.csv'));
+      const salesHrefs = hrefs.filter(h=>{
+        const name = decodeURIComponent(h);
+        return !isInventoryFile(name) && !isStockMasterFile(name);
+      });
+      salesHrefs.forEach(h=>{
+        const name = decodeURIComponent(h);
+        options.push({value:h, label:name});
+      });
+      await tryLoadInventoryFiles(hrefs);
+      renderInventory();
+    }catch(e){ /* ディレクトリ一覧が取得できない(file:// など)場合は内蔵データのみ */ }
+    select.innerHTML = options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
+    select.value = state.sourceValue;
+    select.addEventListener('change', ()=>{
+      const val = select.value;
+      if(val.startsWith('dropped:')){
+        const cached = state.droppedFiles[val];
+        if(cached) applyDataset(cached.rows, val, cached.label);
+        return;
+      }
+      const opt = options.find(o=>o.value===val);
+      loadDataset(val, opt ? opt.label : val);
+    });
+  }
+
+  document.getElementById('fromDate').addEventListener('change', e=>{
+    state.from = e.target.value || state.from; clearPresetActive(); computeAndRender();
+  });
+  document.getElementById('toDate').addEventListener('change', e=>{
+    state.to = e.target.value || state.to; clearPresetActive(); computeAndRender();
+  });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    state.cats = new Set(state.catList);
+    renderCategoryChips();
+    state.from = state.dataMin; state.to = state.dataMax;
+    document.getElementById('fromDate').value = state.from;
+    document.getElementById('toDate').value = state.to;
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active', b.dataset.preset==='all'));
+    computeAndRender();
+  });
+
+  loadDataset('embedded', '内蔵データ(2026年1〜3月・オフライン)').then(discoverAndPopulateSelect);
+</script>

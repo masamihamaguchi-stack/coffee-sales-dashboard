@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "csv-server",
+      "runtimeExecutable": "C:\\Users\\9520010\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "runtimeArgs": ["-m", "http.server", "8000"],
+      "port": 8000
+    }
+  ]
+}
