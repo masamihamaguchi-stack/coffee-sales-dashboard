@@ -453,6 +453,7 @@
     inventoryMaster: EMBEDDED_INVENTORY,
     restockLog: EMBEDDED_RESTOCK,
     inventorySourceLabel: '内蔵データ(オフライン)',
+    salesHrefs: [],
   };
 
   const yen = n => '¥' + Math.round(n).toLocaleString('ja-JP');
@@ -860,6 +861,22 @@
     }
   }
 
+  async function loadCombinedDataset(hrefs, label){
+    setStatus('全期間のデータを読み込み中…');
+    try{
+      const results = await Promise.all(hrefs.map(async h=>{
+        const res = await fetch(h, {cache:'no-store'});
+        if(!res.ok) throw new Error(`${decodeURIComponent(h)}: HTTP ${res.status}`);
+        return parseCSV(await res.text());
+      }));
+      const merged = results.flat();
+      if(merged.length===0) throw new Error('データ行が見つかりません');
+      applyDataset(merged, 'combined:all', label);
+    }catch(err){
+      setStatus(`読み込みエラー: ${err.message}`, true);
+    }
+  }
+
   function addDroppedOption(value, label){
     const select = document.getElementById('datasetSelect');
     let opt = Array.from(select.options).find(o=>o.value===value);
@@ -1015,6 +1032,11 @@
       const name = decodeURIComponent(h);
       return !isInventoryFile(name) && !isStockMasterFile(name);
     });
+    state.salesHrefs = salesHrefs;
+    const combinedLabel = `全期間(${salesHrefs.length}件のCSVを統合)`;
+    if(salesHrefs.length > 1){
+      options.push({value:'combined:all', label:combinedLabel});
+    }
     salesHrefs.forEach(h=>{
       const name = decodeURIComponent(h);
       options.push({value:h, label:name});
@@ -1024,12 +1046,21 @@
       renderInventory();
     }
     select.innerHTML = options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
-    select.value = state.sourceValue;
+    if(salesHrefs.length > 1){
+      select.value = 'combined:all';
+      await loadCombinedDataset(salesHrefs, combinedLabel);
+    } else {
+      select.value = state.sourceValue;
+    }
     select.addEventListener('change', ()=>{
       const val = select.value;
       if(val.startsWith('dropped:')){
         const cached = state.droppedFiles[val];
         if(cached) applyDataset(cached.rows, val, cached.label);
+        return;
+      }
+      if(val === 'combined:all'){
+        loadCombinedDataset(state.salesHrefs, combinedLabel);
         return;
       }
       const opt = options.find(o=>o.value===val);
