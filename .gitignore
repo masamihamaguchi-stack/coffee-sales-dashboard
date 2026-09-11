@@ -1,4 +1,8 @@
 .claude/scheduled_tasks.lock
+.env
+__pycache__/
+*.pyc
+.venv/
 Day1.zip
 Day1/
 csv/
